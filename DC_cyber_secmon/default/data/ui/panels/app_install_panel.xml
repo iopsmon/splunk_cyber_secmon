@@ -1,0 +1,15 @@
+<panel>
+  <title>App Install And Config</title>
+  <html>
+    <p>[Install App]</p>
+    <ol>
+	    <li>Install this app onto Splunk AIO /opt/splunk/etc/apps  or  SHC as admin
+tar -xvf DC_cyber_secmon.tar.gz  -C /opt/splunk/etc/shcluster/apps/
+OR use the GUI method and push the app to the SHC - follow the SHC app deployment process</li>
+    </ol>
+    
+
+
+
+</html>
+</panel>

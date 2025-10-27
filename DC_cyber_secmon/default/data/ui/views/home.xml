@@ -1,0 +1,17 @@
+<dashboard hideEdit="true" version="1.1">
+  <tags>mobile</tags>
+  <label>Intro </label>
+  <description>This app is to help with Security Monitoring.</description>
+  <row>
+	  <panel app="DC_cyber_secmon" ref="intro" />
+	  <panel app="DC_cyber_secmon" ref="app_version_panel" />
+  </row>
+  <row>
+    <panel app="DC_cyber_secmon" ref="ext_docs_panel" />
+    <panel app="DC_cyber_secmon" ref="ext_community_panel" />
+    <panel app="DC_cyber_secmon" ref="app_install_panel" />
+  </row>
+  <row>
+    <panel app="DC_cyber_secmon" ref="general" />
+  </row>
+</dashboard>

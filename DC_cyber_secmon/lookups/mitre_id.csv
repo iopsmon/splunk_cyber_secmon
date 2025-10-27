@@ -1,0 +1,280 @@
+mitre_id,id_summary
+T1053.005,Scheduled Task/Job
+T1497.003,Browser Environment
+T1203,Exploitation for Client Execution
+T1499,Endpoint Denial of Service
+T1547.010,Boot Initialization Files
+T1053.002,At Command
+T1036,Masquerading
+T1204,User Execution
+T1560.001,Archive via Utility
+T1574.001,DLL Search Order Hijacking
+T1490,Inhibit System Recovery
+T1548.001,Setuid and Setgid
+T1078.004,Cloud Accounts
+T1574.006,Dynamic Link Library (DLL) Side-Loading
+T1497,Virtualization/Sandbox Evasion
+T1087.004,Cloud Account
+T1053,Scheduled Task/Job
+T1098,Account Manipulation
+T1562.007,Renaming System Utilities
+T1601.001,Change Default File Association
+T1496,Resource Hijacking
+T1078.002,Domain Accounts
+T1087.002,Domain Account
+T1053.003,Cron
+T1547.011,Kernel Modules and Extensions
+T1498,Denial of Service
+T1574.009,Path Interception by Environmental Variables
+T1090.003,Multi-hop Proxy
+T1030,Data Transfer Size Limits
+T1202,Indirect Command Execution
+T1562.006,Security Software Discovery
+T1562.001,Disable or Modify Tools
+T1546.011,Windows Management Instrumentation Event Subscription
+T1055,Process Injection
+T1562.008,Image File Execution Options Injection
+T1176.001,Browser Extensions
+T1136.003,Cloud Account
+T1069.002,Domain Accounts
+T1127,Trusted Developer Utilities Proxy Execution
+T1218.011,Signed Binary Proxy Execution: Rundll32
+T1566.001,Spearphishing Attachment
+T1129,Shared Modules
+T1572,Protocol Tunneling
+T1003.001,LSASS Memory
+T1526,Cloud Service Discovery
+T1134.005,Token Impersonation/Theft: All Privileges
+T1027.011,MSF Payload with Sandbox Bypass
+T1189,Drive-by Compromise
+T1003.006,DCSync
+T1187,Forced Authentication
+T1528,Steal or Forge Kerberos Tickets
+T1003.008,/etc/passwd and /etc/shadow
+T1218.010,Signed Binary Proxy Execution: Regsvr32
+T1110,Brute Force
+T1580,Cloud Infrastructure Discovery
+T1119,Automated Collection
+T1565.001,Stolen Data
+T1484.002,Domain Policy Modification
+T1564.001,Hidden Files and Directories
+T1558.001,Steal or Forge Kerberos Tickets: Kerberoasting
+T1529,Denial of Service: System Shutdown/Reboot
+T1564.008,VDI Host Image
+T1543.003,Windows Service
+T1098.001,Additional Cloud Credentials
+T1567,Exfiltration Over Web Service
+T1218.003,Signed Binary Proxy Execution: CMSTP
+T1558,Steal or Forge Kerberos Tickets
+T1542.003,Image File Execution Options
+T1560,Archive Collected Data
+T1218.004,Signed Binary Proxy Execution: InstallUtil
+T1556,Disable or Modify Authentication
+T1569,System Services
+T1555.005,Password Manager
+T1135,Network Share Discovery
+T1569.002,Service Execution
+T1557.002,LLMNR/NBT-NS Poisoning
+T1110.001,Password Guessing
+T1070.001,Clear Windows Event Logs
+T1059.001,PowerShell
+T1550,Use Alternate Authentication Material
+T1134,Access Token Manipulation
+T1555.003,Credentials from Web Browsers
+T1133,External Remote Services
+T1555.004,Credentials from Email
+T1595,Active Scanning
+T1105,Ingress Tool Transfer
+T1218.005,Signed Binary Proxy Execution: BITSAdmin
+T1102,Web Service
+T1566,Phishing
+T1592,Gather Victim Network Information
+T1559,Inter-Process Communication
+T1218.002,Signed Binary Proxy Execution: Control Panel
+T1546.002,Registry Run Keys / Startup Folder
+T1552.002,Credentials from Password Stores
+T1036.005,Match Legitimate Name or Properties
+T1562.012,Disable System Controls
+T1070,Indicator Removal
+T1036.002,Space after Filename
+T1048,Exfiltration Over Alternate Protocol
+T1621,Set Boot Order
+T1083,File and Directory Discovery
+T1021.003,Distributed Component Object Model
+T1195.002,Compromise Software Dependencies and Development Environment
+T1041,Exfiltration Over C2 Channel
+T1505.001,Firmware
+T1021.004,SSH
+T1505.006,Terminal Services DLL
+T1046,Network Service Scanning
+T1586.003,Cloud Instance
+T1482,Domain Trust Discovery
+T1587.003,DNS Records
+T1220,XSL Script Processing
+T1550.003,Pass the Ticket
+T1485,Data Destruction
+T1218,Signed Binary Proxy Execution
+T1590.005,Cloud Service Discovery
+T1547.005,Startup Items
+T1553.005,Trust Settings Modification
+T1590.002,Network Topology Interception
+T1216,Code Signing
+T1078,Valid Accounts
+T1047,Windows Management Instrumentation
+T1611,Modify Cloud Compute Settings
+T1021.002,SMB/Windows Admin Shares
+T1040,Network Sniffing
+T1552.004,Private Keys
+T1546.004,Winlogon Helper DLL
+T1036.003,Rename System Utilities
+T1049,System Network Connections Discovery
+T1082,System Information Discovery
+T1620,Reflective Code Loading
+T1546.003,Time Providers
+T1673,Container Monitoring
+T1553.003,NTLM Hashing
+T1547.003,Time Providers
+T1210,Exploitation of Remote Services
+T1553.004,Credentials in Files
+T1484,Group Policy Modification
+T1014,Rootkit
+T1219,Remote Access Software
+T1578.005,Cloud Accounts
+T1587.002,Code Repositories
+T1222.002,Bypass User Access Control
+T1550.002,Pass the Hash
+T1213.002,Local Data Staging
+T1057,Process Discovery
+T1561.002,Inhibit System Recovery: OS Install
+T1068,Exploitation for Privilege Escalation
+T1562.004,Disable or Modify System Firewall
+T1059,Command and Scripting Interpreter
+T1204.003,Malicious Link
+T1562.003,Inhibit System Network Configuration
+T1095,Non-Application Layer Protocol
+T1090.001,Internal Proxy
+T1207,Host-to-Cloud Inter-Process Communication
+T1547.014,Active Setup
+T1053.006,At Jobs
+T1200,Hardware Additions
+T1127.001,Trusted Developer Utilities Proxy Execution: MSBuild
+T1574.002,Side-Loading
+T1548.002,Service Owner Writeable Files
+T1003,OS Credential Dumping
+T1562.002,Disable or Modify Tools
+T1204.002,Malicious File
+T1589.002,External System Information Discovery: Email Addresses
+T1546.012,BITS Jobs
+T1546.015,Security Support Provider
+T1654,Container Administration Command
+T1548.003,Sudo Caching
+T1087.001,Local Account
+T1005,Data from Local System
+T1053.007,Container Orchestration Job
+T1201,Remote Services
+T1033,System Owner/User Discovery
+T1547.012,Component Object Model Hijacking
+T1588.002,Tool
+T1563.002,Lateral Tool Transfer
+T1567.002,Exfiltration Over Web Service: Web Service
+T1598.002,Phishing for Information: Spearphishing Link
+T1003.002,Security Account Manager
+T1525,Implant Internal Image
+T1564.004,NTFS Extended Attributes
+T1558.004,AS-REP Roasting
+T1558.003,Kerberos Ticket (TGT)
+T1564.003,Hidden Window
+T1055.001,DLL Injection
+T1069.001,Local Accounts
+T1115,Clipboard Data
+T1585,Establish Cloud Access
+T1218.012,Signed Binary Proxy Execution: InstallUtil
+T1566.002,Spearphishing Link
+T1112,Modify Registry
+T1558.002,Silver Ticket
+T1185,Browser Session Hijacking
+T1484.001,Group Policy Modification: Domain Policy
+T1140,Deobfuscate/Decode Files or Information
+T1003.003,NTDS
+T1027.013,Encoded Command with Arguments
+T1003.004,LSA Secrets
+T1548,Abuse Elevation Control Mechanism
+T1218.013,Signed Binary Proxy Execution: Mshta
+T1113,Screen Capture
+T1584,Compromise Infrastructure
+T1114,Email Collection
+T1570,Lateral Tool Transfer
+T1546,Event Triggered Execution
+T1136.001,Local Account
+T1218.007,Signed Binary Proxy Execution: Msiexec
+T1564,Hide Artifacts
+T1218.009,Signed Binary Proxy Execution: Regsvcs
+T1059.003,Windows Command Shell
+T1552,Unsecured Credentials
+T1136,Create Account
+T1555,Credentials from Password Stores
+T1059.004,Unix Shell
+T1071.004,DNS
+T1070.004,File Deletion
+T1539,Credentials in Files
+T1070.003,Clear Command History
+T1098.002,Cloud Service Account
+T1530,Data Transfer Size Limits
+T1110.003,Password Spraying
+T1098.005,SSH Authorized Keys
+T1110.004,Credential Stuffing
+T1537,Obfuscated Files or Information
+T1059.005,Visual Basic Script
+T1554,Password Decryption
+T1059.002,AppleScript
+T1071.002,File Transfer Protocols
+T1218.008,Signed Binary Proxy Execution: Pubprn
+T1556.001,Modify Authentication Process
+T1218.001,Signed Binary Proxy Execution: Compiled HTML File
+T1562,Impair Defenses
+T1556.006,Cloud-Cloud Identity Synchronization
+T1199,Trusted Relationship
+T1098.004,Account Creation
+T1098.003,Default Accounts
+T1027.006,HTML Smuggling
+T1531,Account Access Removal
+T1110.002,Password Cracking
+T1197,BITS Jobs
+T1190,Exploitation of Public-Facing Application
+T1070.005,Indicator Removal on Host: Network Share Deletion
+T1016,System Network Configuration Discovery
+T1486,Data Encrypted for Impact
+T1647,Modify System Image
+T1547.008,Terminal Services
+T1114.002,Email Collection: Local Email Client
+T1027,Obfuscated Files or Information
+T1018,Remote System Discovery
+T1547.001,Registry Run Keys / Startup Folder
+T1212,Exploitation for Credential Access
+T1020,Automated Exfiltration
+T1649,Modify System Image
+T1547.006,Kernel Modules and Extensions
+T1037.001,Boot or Logon Autostart Execution: Logon Script (Windows)
+T1552.006,Windows Registry
+T1035.009,Service Execution: Windows Service
+T1546.001,Registry Run Keys / Startup Folder
+T1552.001,Unsecured Credentials: Credentials from the Windows Registry
+T1087,Account Discovery
+T1499.004,Endpoint Denial of Service: Application or Service Exploitation
+T1546.008,Accessibility Features
+T1195.001,Supply Chain Compromise: Compromise Software Supply Chain
+T1021,Remote Services
+T1213,Data from Information Repositories
+T1114.003,Email Collection: Webmail
+T1489,Service Stop
+T1048.003,Exfiltration Over Alternate Protocol: Exfiltration Over Unencrypted/Obscured Non-C2 Protocol
+T1574.011,Services Registry Permissions Weakness
+T1222.001,File and Directory Permissions Modification: Bypass User Access Control
+T1021.001,Remote Desktop Protocol
+T1505.003,Security Software
+T1036.009,Space in File Name
+T1021.006,Windows Remote Management
+T1505.004,Web Shell
+T1102.002,Web Service: Dead Drop Resolver
+T1072,Software Deployment Tools
+T1552.007,Credentials from Password Stores: Windows Credentials

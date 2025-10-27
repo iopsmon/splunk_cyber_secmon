@@ -1,0 +1,16 @@
+<panel>
+  <title>Cyber Security Monitoring App Overview</title>
+  <html>
+    <p>The Cyber Security Monitoring App is a custom Splunk application designed for security detection development and threat analysis. It provides a focused workspace for security analysts and detection engineers to build, test, and validate security use cases based on real-world attack techniques.</p>
+    
+ <p>This application serves as a detection engineering platform that:</p>
+    <ol>
+      <li>Enables rapid development and testing of security detections without deploying to production</li>
+      <li>Provides visibility into attack patterns using curated datasets from the Splunk Attack Data repository</li>
+      <li>Maps security detections to the MITRE ATTACK framework for comprehensive coverage tracking</li>
+      <li>Offers a lightweight alternative to enterprise security platforms for use case development</li>
+     
+    </ol>
+    <p>Note: This app is not intended to replace comprehensive tools like Splunk Enterprise Security (ES), but rather complements them by providing a dedicated environment for detection content development.</p>
+  </html>
+</panel>

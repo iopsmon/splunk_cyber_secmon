@@ -1,0 +1,283 @@
+<form version="1.1" theme="dark">
+  <label>Security Alerts Dashboard</label>
+  <description>Unified view of security alerts across Endpoint, Network, Web, and IAM categories</description>
+  <!-- Time Range Picker -->
+  <!-- Row 1: Summary Statistics -->
+  <!-- Row 2: Visualization Charts -->
+  <!-- Row 3: MITRE ATT&CK Coverage -->
+  <!-- Row 4: Detailed Alert Table with Normalized Fields -->
+  <!-- Row 5: Alert Summary by Category -->
+  <!-- Row 6: Alerts by Source (Alert Type Breakdown) -->
+  <fieldset submitButton="true" autoRun="true">
+    <input type="time" token="time_token">
+      <label>Time Range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="severity_filter">
+      <label>Severity Filter</label>
+      <choice value="*">All Severities</choice>
+      <choice value="critical">Critical</choice>
+      <choice value="high">High</choice>
+      <choice value="medium">Medium</choice>
+      <choice value="low">Low</choice>
+      <default>*</default>
+    </input>
+    <input type="dropdown" token="category_filter">
+      <label>Alert Category</label>
+      <choice value="*">All Categories</choice>
+      <choice value="END*">Endpoint (END)</choice>
+      <choice value="NET*">Network (NET)</choice>
+      <choice value="WEB*">Web (WEB)</choice>
+      <choice value="IAM*">Identity (IAM)</choice>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Total Alerts (24h)</title>
+      <single>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| stats count</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xF58F39","0xD93F3C"]</option>
+        <option name="rangeValues">[0,10,50]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Critical/High Severity</title>
+      <single>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity IN ("critical", "high")
+| stats count</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
+        <option name="rangeValues">[0,5]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Unique Affected Hosts</title>
+      <single>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| stats dc(src_entity) as unique_hosts</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
+        <option name="rangeValues">[0,3]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>MITRE Techniques Detected</title>
+      <single>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| stats dc(mitre_technique_id) as unique_techniques</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="underLabel">Unique Techniques</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Alerts Over Time</title>
+      <chart>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| timechart count by severity</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Alert Count</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.seriesColors">[0x65A637,0xF7BC38,0xF58F39,0xD93F3C]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Alerts by Severity</title>
+      <chart>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| stats count by severity
+| sort - count</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.seriesColors">[0x65A637,0xF7BC38,0xF58F39,0xD93F3C]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>MITRE ATTACK Tactics Detected</title>
+      <chart>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| stats count by mitre_tactic
+| sort - count</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Alert Count</option>
+        <option name="charting.axisTitleY.text">MITRE Tactic</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Top MITRE Techniques</title>
+      <table>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| stats count by mitre_technique_id, mitre_technique_name, mitre_tactic
+| sort - count
+| head 10
+| rename mitre_technique_id as "Technique ID", mitre_technique_name as "Technique Name", mitre_tactic as "Tactic", count as "Alert Count"</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Detailed Alert View (All Categories)</title>
+      <table>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| eval alert_time=strftime(_time, "%Y-%m-%d %H:%M:%S")
+| table alert_time, alert_id, alert_name, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source
+| rename alert_time as "Alert Time", alert_id as "Alert ID", alert_name as "Alert Name", severity as "Severity", src_entity as "Source Entity", process_info as "Process/Service", target_info as "Target", additional_context as "Context", mitre_technique_id as "MITRE Technique", mitre_tactic as "MITRE Tactic", data_source as "Data Source"
+| sort - "Alert Time"</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="count">20</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Severity">
+          <colorPalette type="map">{"critical":#D93F3C,"high":#F58F39,"medium":#F7BC38,"low":#65A637}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Alert Summary by Category</title>
+      <table>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| stats count as total_alerts, 
+        dc(src_entity) as unique_hosts, 
+        values(severity) as severities
+        by alert_id, alert_name, data_source
+| sort - total_alerts
+| rename alert_id as "Alert ID", alert_name as "Alert Name", data_source as "Data Source", total_alerts as "Total Alerts", unique_hosts as "Unique Hosts", severities as "Severities"</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Alerts by Alert Type</title>
+      <chart>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| stats count by source
+| sort - count</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Alert Count</option>
+        <option name="charting.axisTitleY.text">Alert Source</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Top Affected Hosts</title>
+      <table>
+        <search>
+          <query>index=notable 
+```earliest=$time_token.earliest$ latest=$time_token.latest$```
+| search severity="$severity_filter$" alert_id="$category_filter$"
+| stats count as alert_count, 
+        values(alert_name) as alert_types,
+        values(severity) as severities
+        by src_entity
+| sort - alert_count
+| head 10
+| rename src_entity as "Host/IP", alert_count as "Alert Count", alert_types as "Alert Types", severities as "Severities"</query>
+          <earliest>$time_token.earliest$</earliest>
+          <latest>$time_token.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>
