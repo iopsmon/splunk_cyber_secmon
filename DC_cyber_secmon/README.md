@@ -17,6 +17,8 @@ This application serves as a **detection engineering platform** that:
 
 **Note:** This app is not intended to replace comprehensive tools like Splunk Enterprise Security (ES), but rather complements them by providing a dedicated environment for detection content development.
 
+![dashboard_alert image](images/secmon_dashboard.png)
+
 ---
 
 ## Architecture
