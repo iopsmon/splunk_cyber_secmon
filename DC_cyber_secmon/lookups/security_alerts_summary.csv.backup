@@ -1,0 +1,2 @@
+alert_id,alert_name,severity,mitre_technique_id,mitre_technique_name,mitre_tactic,data_source
+END_ALT-001,Suspicious Registry Modification via Direct Device Access,medium,T1112,Modify Registry,Defense Evasion,Sysmon

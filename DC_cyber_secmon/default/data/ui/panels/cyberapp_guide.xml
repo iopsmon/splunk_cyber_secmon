@@ -1,0 +1,459 @@
+  
+    <panel>
+      <title>Cyber Security Monitoring Overview</title>
+      <html>
+        <h2>Overview</h2>
+        <p>The <strong>Cyber Security Monitoring App</strong> is a custom Splunk application designed for security detection development and threat analysis. It provides a focused workspace for security analysts and detection engineers to build, test, and validate security use cases based on real-world attack techniques.</p>
+        
+        <h3>Purpose</h3>
+        <p>This application serves as a <strong>detection engineering platform</strong> that:</p>
+        <ul>
+          <li>Enables rapid development and testing of security detections without deploying to production</li>
+          <li>Provides visibility into attack patterns using curated datasets from the Splunk Attack Data repository</li>
+          <li>Maps security detections to the MITRE ATTACK framework for comprehensive coverage tracking</li>
+          <li>Offers a lightweight alternative to enterprise security platforms for use case development</li>
+        </ul>
+        
+        <p><strong>Note:</strong> This app is not intended to replace comprehensive tools like Splunk Enterprise Security (ES), but rather complements them by providing a dedicated environment for detection content development.</p>
+     
+    
+
+    
+      <title>Architecture</title>
+      
+        <h3>Data Flow</h3>
+        <ol>
+          <li><strong>Raw Attack Data</strong> (attack_data index) - Sysmon logs, Windows Security logs, Network traffic, Web logs</li>
+          <li><strong>Scheduled Alert Searches</strong> - Run detection logic on raw data, enrich with MITRE ATTACK mapping, normalize fields</li>
+          <li><strong>Notable Events</strong> (notable index) - Processed security alerts with standardized schema</li>
+          <li><strong>Security Alerts Dashboard</strong> - Real-time visualization, MITRE coverage analysis, alert triage</li>
+        </ol>
+
+        <h3>Key Components</h3>
+        <ul>
+          <li><strong>Attack Data Repository:</strong> Curated datasets from Splunk's Attack Data GitHub, organized by MITRE ATTACK techniques</li>
+          <li><strong>Detection Use Cases:</strong> Scheduled searches with MITRE mapping that write to the notable index</li>
+          <li><strong>Notable Events Index:</strong> Centralized alert repository with standardized fields</li>
+          <li><strong>Security Alerts Dashboard:</strong> Single pane of glass for all security detections</li>
+        </ul>
+
+
+<title>Alert Classification System</title>
+      
+        <h3>Alert Categories</h3>
+        <table style="width:100%; border-collapse: collapse; border: 1px solid #ddd;">
+          <tr style="background-color: #f2f2f2;">
+            <th style="padding: 8px; border: 1px solid #ddd;">Prefix</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Category</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Description</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Example</th>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>END</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Endpoint</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Host-based detections (Sysmon, Windows Security)</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">END_ALT-001</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>NET</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Network</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Network traffic analysis (Firewall, IDS/IPS)</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">NET_ALT-001</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>WEB</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Web</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Web application and proxy logs</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">WEB_ALT-001</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>IAM</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Identity And Access</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Authentication and authorization events</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">IAM_ALT-001</td>
+          </tr>
+        </table>
+        
+        <h3>Alert ID Format</h3>
+        <p><code>{CATEGORY}_ALT-{NUMBER}</code></p>
+        <p><strong>Example:</strong> END_ALT-001 = Endpoint Alert #001</p>
+
+
+    
+      <title>Alert Metadata Schema</title>
+      
+        <p>All alerts are enriched with metadata stored in the lookup file <code>iops_security_alerts_summary.csv</code>:</p>
+        
+        <table style="width:100%; border-collapse: collapse; border: 1px solid #ddd;">
+          <tr style="background-color: #f2f2f2;">
+            <th style="padding: 8px; border: 1px solid #ddd;">Field</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Description</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Example</th>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>alert_id</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Unique alert identifier</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">END_ALT-001</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>alert_name</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Descriptive alert name</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Suspicious Registry Modification</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>severity</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Alert severity level</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">critical, high, medium, low</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>mitre_technique_id</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">MITRE ATT&amp;CK Technique ID</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">T1112</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>mitre_technique_name</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">MITRE ATT&amp;CK Technique Name</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Modify Registry</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>mitre_tactic</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">MITRE ATT&amp;CK Tactic</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Defense Evasion</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>data_source</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Source of alert data</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Sysmon, Windows Security</td>
+          </tr>
+        </table>
+      
+   
+
+    
+      <title>Notable Events Field Schema</title>
+      
+        <p>All alerts written to the <code>notable</code> index use a standardized field structure:</p>
+        
+        <h3>Core Fields</h3>
+        <ul>
+          <li><code>_time</code> - Event timestamp</li>
+          <li><code>alert_id</code> - Alert identifier (e.g., END_ALT-001)</li>
+          <li><code>alert_name</code> - Alert description</li>
+          <li><code>severity</code> - Alert severity (critical, high, medium, low)</li>
+        </ul>
+        
+        <h3>Normalized Fields (Cross-Source Compatible)</h3>
+        <table style="width:100%; border-collapse: collapse; border: 1px solid #ddd;">
+          <tr style="background-color: #f2f2f2;">
+            <th style="padding: 8px; border: 1px solid #ddd;">Field</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Description</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Endpoint Example</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Network Example</th>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>src_entity</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Source host/IP</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Computer name</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Source IP address</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>process_info</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Process/service details</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Image path</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Service name</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>target_info</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Target object</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Registry path</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Destination IP</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>additional_context</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Extra context</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Suspicious reason</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Protocol details</td>
+          </tr>
+        </table>  
+
+   <h3>MITRE ATT&amp;CK Fields</h3>
+        <ul>
+          <li><code>mitre_technique_id</code> - MITRE Technique ID</li>
+          <li><code>mitre_technique_name</code> - MITRE Technique Name</li>
+          <li><code>mitre_tactic</code> - MITRE Tactic</li>
+        </ul>
+
+
+    
+      <title>Current Detections</title>
+      
+        <h3>Endpoint (END) Category</h3>
+        
+        <h4>END_ALT-001: Suspicious Registry Modification via Direct Device Access</h4>
+        <ul>
+          <li><strong>MITRE ATT&amp;CK:</strong> T1112 (Modify Registry)</li>
+          <li><strong>Tactic:</strong> Defense Evasion</li>
+          <li><strong>Severity:</strong> Medium</li>
+          <li><strong>Data Source:</strong> Sysmon EventCode 13</li>
+          <li><strong>Detection Logic:</strong> Identifies processes using the <code>\\?\</code> path prefix to access registry, which may indicate evasion techniques</li>
+          <li><strong>Use Case:</strong> Detects suspicious registry modifications that bypass normal path parsing</li>
+        </ul>
+        
+        <h4>Example Alert Fields:</h4>
+        <pre style="background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; overflow-x: auto;">
+<p>alert_id: END_ALT-001
+alert_name: Suspicious Registry Modification via Direct Device Access
+severity: medium
+src_entity: WORKSTATION01
+process_info: \\?\C:\Windows\system32\wbem\WMIADAP.EXE
+target_info: HKLM\System\CurrentControlSet\Services\...
+additional_context: Image path begins with \\?\ (direct device access)
+mitre_technique_id: T1112
+mitre_tactic: Defense Evasion
+data_source: Sysmon</p>
+        </pre>
+     
+
+ 
+      <title>Security Alerts Dashboard</title>
+      
+        <p>The main dashboard provides comprehensive visibility into security alerts across all categories.</p>
+        
+        <h3>Dashboard Features</h3>
+        
+        <h4>1. Summary Statistics</h4>
+        <ul>
+          <li>Total alerts in selected time range</li>
+          <li>Critical/High severity alert count</li>
+          <li>Unique affected hosts</li>
+          <li>MITRE techniques detected</li>
+        </ul>
+        
+        <h4>2. Trend Visualizations</h4>
+        <ul>
+          <li>Alerts over time (by severity)</li>
+          <li>Alert distribution by severity (pie chart)</li>
+          <li>Alerts by source/type breakdown</li>
+        </ul>
+        
+        <h4>3. MITRE ATT&amp;CK Coverage</h4>
+        <ul>
+          <li>Tactics detected (bar chart)</li>
+          <li>Top techniques table</li>
+          <li>Coverage gap analysis</li>
+        </ul>
+        
+        <h4>4. Detailed Alert View</h4>
+        <ul>
+          <li>Comprehensive alert table with all fields</li>
+          <li>Color-coded severity indicators</li>
+          <li>Sortable and filterable columns</li>
+          <li>Drill-down capability for investigation</li>
+        </ul>
+        
+        <h3>Dashboard Filters</h3>
+        <table style="width:100%; border-collapse: collapse; border: 1px solid #ddd;">
+          <tr style="background-color: #f2f2f2;">
+            <th style="padding: 8px; border: 1px solid #ddd;">Filter</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Options</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Description</th>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;">Time Range</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Custom time picker</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Filter alerts by time period</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;">Severity</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">All, Critical, High, Medium, Low</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Filter by alert severity</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;">Category</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">All, END, NET, WEB, IAM</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">Filter by alert category</td>
+          </tr>
+        </table>
+      
+
+      <title>Creating New Detection Use Cases</title>
+      
+        <h3>Step 1: Develop Detection Logic</h3>
+        <p>Create a search that identifies suspicious activity in your attack data:</p>
+        <pre style="background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; overflow-x: auto;">
+<p>index=attack_data 
+source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" 
+EventCode=1
+CommandLine="*powershell*-enc*"
+earliest=-1h latest=now
+| eval alert_name="Suspicious Encoded PowerShell Execution"
+| eval suspicious_reason="PowerShell executed with encoded command"</p>
+        </pre>
+        
+        <h3>Step 2: Add Alert to Lookup File</h3>
+        <p>Add a new row to <code>iops_security_alerts_summary.csv</code>:</p>
+        <pre style="background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; overflow-x: auto;">
+END_ALT-002,Suspicious Encoded PowerShell Execution,high,T1059.001,PowerShell,Execution,Sysmon
+        </pre>
+        
+        <h3>Step 3: Create Scheduled Alert</h3>
+        <ol>
+          <li>Save the search as an alert</li>
+          <li>Configure schedule (e.g., every 5 minutes)</li>
+          <li>Add lookup enrichment</li>
+          <li>Add <code>collect</code> command to write to <code>notable</code> index</li>
+        </ol>
+        
+        <h3>Step 4: Test and Validate</h3>
+        <ol>
+          <li>Run the alert manually to verify results</li>
+          <li>Check the <code>notable</code> index for alert data</li>
+          <li>Verify alert appears in the Security Alerts Dashboard</li>
+          <li>Validate MITRE ATT&amp;CK mapping is correct</li>
+        </ol>
+ 
+      <title>Best Practices</title>
+      
+        <h3>Detection Development</h3>
+        <ol>
+          <li><strong>Start with Raw Data Analysis</strong> - Understand the data structure before writing detections</li>
+          <li><strong>Test in Isolation</strong> - Validate detection logic against known true positives</li>
+          <li><strong>Use Normalized Fields</strong> - Always populate src_entity, process_info, target_info, additional_context</li>
+          <li><strong>MITRE ATT&amp;CK Mapping</strong> - Map every alert to at least one MITRE technique</li>
+        </ol>
+        
+        <h3>Alert Management</h3>
+        <ol>
+          <li><strong>Consistent Naming</strong> - Use descriptive alert names and follow category prefix convention</li>
+          <li><strong>Severity Assignment:</strong>
+            <ul>
+              <li><strong>Critical:</strong> Immediate response required, high confidence of compromise</li>
+              <li><strong>High:</strong> Likely malicious activity, requires investigation</li>
+              <li><strong>Medium:</strong> Suspicious activity, context-dependent threat</li>
+              <li><strong>Low:</strong> Anomalous behavior, informational</li>
+            </ul>
+          </li>
+          <li><strong>Documentation</strong> - Document detection logic, assumptions, and expected false positive rate</li>
+        </ol>
+        
+        <h3>Performance Optimization</h3>
+        <ol>
+          <li><strong>Alert Frequency</strong> - Balance detection speed with system load</li>
+          <li><strong>Data Retention</strong> - Set appropriate retention for notable index</li>
+          <li><strong>Dashboard Performance</strong> - Queries are fast since they only read from notable index</li>
+        </ol>
+
+ 
+      <title>Troubleshooting</title>
+      
+        <h3>Issue: Alerts Not Appearing in Dashboard</h3>
+        <p><strong>Possible Causes:</strong></p>
+        <ul>
+          <li>Alert not writing to notable index</li>
+          <li>Time range filter excluding alerts</li>
+          <li>Severity or category filter excluding alerts</li>
+        </ul>
+
+<p><strong>Solutions:</strong></p>
+        <pre style="background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; overflow-x: auto;">
+<p># Check if alerts exist in notable index
+index=notable earliest=-24h | stats count by source</p>
+
+        <p># Check specific alert
+index=notable source="END_ALT-001" earliest=-24h | table _time, *</p>
+        </pre>
+        
+        <h3>Issue: Missing MITRE ATT&amp;CK Mapping</h3>
+        <p><strong>Possible Causes:</strong></p>
+        <ul>
+          <li>Lookup file not updated</li>
+          <li>alert_name mismatch between SPL and lookup</li>
+          <li>Lookup not being applied in alert search</li>
+        </ul>
+        
+        <p><strong>Solutions:</strong></p>
+        <pre style="background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; overflow-x: auto;">
+<p># Test lookup manually
+| makeresults 
+| eval alert_name="Suspicious Registry Modification via Direct Device Access"
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id</p>
+
+<p># Verify lookup file contents
+| inputlookup iops_security_alerts_summary</p>
+        </pre>
+      
+      <title>References and Resources</title>
+      
+        <h3>MITRE ATT&amp;CK Framework</h3>
+        <ul>
+          <li><strong>Website:</strong> <a href="https://attack.mitre.org" target="_blank">https://attack.mitre.org</a></li>
+          <li><strong>Navigator:</strong> <a href="https://mitre-attack.github.io/attack-navigator/" target="_blank">https://mitre-attack.github.io/attack-navigator/</a></li>
+        </ul>
+        
+        <h3>Splunk Attack Data</h3>
+        <ul>
+          <li><strong>Repository:</strong> <a href="https://github.com/splunk/attack_data" target="_blank">https://github.com/splunk/attack_data</a></li>
+        </ul>
+        
+        <h3>Splunk Security Content</h3>
+        <ul>
+          <li><strong>Repository:</strong> <a href="https://github.com/splunk/security_content" target="_blank">https://github.com/splunk/security_content</a></li>
+          <li><strong>Detections Library:</strong> <a href="https://research.splunk.com" target="_blank">https://research.splunk.com</a></li>
+        </ul>
+        
+        <h3>Additional Resources</h3>
+        <ul>
+          <li><strong>Splunk Docs:</strong> <a href="https://docs.splunk.com" target="_blank">https://docs.splunk.com</a></li>
+          <li><strong>Splunk Community:</strong> <a href="https://community.splunk.com" target="_blank">https://community.splunk.com</a></li>
+        </ul>
+
+	
+      <title>Future Enhancements</title>
+      
+        <h3>Planned Features</h3>
+        <ul>
+          <li>Alert triage workflow (status field: open/investigating/closed)</li>
+          <li>Automated response actions</li>
+          <li>Threat intelligence integration</li>
+          <li>Risk-based alerting and scoring</li>
+          <li>Alert correlation across multiple techniques</li>
+          <li>Custom MITRE ATT&amp;CK navigator export</li>
+          <li>Scheduled email reports</li>
+          <li>Integration with ticketing systems (JIRA, ServiceNow)</li>
+        </ul>
+
+        <h3>Detection Coverage Expansion</h3>
+        <ul>
+          <li>Network-based detections (NET category)</li>
+          <li>Web application security (WEB category)</li>
+          <li>Identity and access management (IAM category)</li>
+          <li>Cloud security detections</li>
+          <li>Container and Kubernetes security</li>
+        </ul>
+      
+
+      <title>Version Information</title>
+      
+        <h3>Version History</h3>
+        
+        <h4>v1.0.0 (Initial Release)</h4>
+        <ul>
+          <li>Core dashboard with multi-panel visualization</li>
+          <li>Notable events framework</li>
+          <li>MITRE ATT&amp;CK mapping via lookup</li>
+          <li>Endpoint detection category (END)</li>
+          <li>First detection: END_ALT-001 (Suspicious Registry Modification)</li>
+          <li>Attack data ingestion workflow</li>
+          <li>Custom replay script for automated data ingestion</li>
+        </ul>
+        
+        <hr/>
+        
+        <p><strong>Document Version:</strong> 1.0<br/>
+        <strong>Last Updated:</strong> October 2024<br/>
+        <strong>Author:Deepak Chohan iOpsMon</strong> Security Engineering</p>
+        
+        <p><em>This application is for internal Test use only. Attack data sourced from the Splunk Attack Data repository is licensed under Apache 2.0.</em></p>
+      
+</html>
+    </panel>

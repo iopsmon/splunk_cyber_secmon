@@ -1,0 +1,26 @@
+<panel>
+  <title>Cyber Security Monitoring Overview</title>
+  <html>
+    <p><strong>Welcome to the Cyber Security Monitoring App</strong></p>
+    <p>This application is designed to support security detection development and threat analysis using curated attack datasets. It serves as a dedicated environment for building, testing, and validating security use cases based on real-world attack techniques.</p>
+    
+    <p><strong>Purpose:</strong></p>
+    <p>This app provides a focused workspace for security analysts and detection engineers to develop detection content without the overhead of a full enterprise security platform. While it does not replace comprehensive tools like Splunk Enterprise Security, it offers essential capabilities for security event analysis and use case development.</p>
+    
+    <p><strong>Current Capabilities:</strong></p>
+    <ul>
+      <li><strong>Security Events Monitoring</strong> - Real-time visibility into attack data ingested from the Splunk Attack Data repository</li>
+      <li><strong>Detection Use Cases</strong> - MITRE ATTACK-based detections mapped to specific techniques and tactics</li>
+      <li><strong>Security Reports</strong> - Pre-built reports for threat analysis and detection validation</li>
+      <li><strong>Test Environment</strong> - Safe space to develop and refine detection logic before production deployment</li>
+    </ul>
+    
+    <p><strong>Roadmap:</strong></p>
+    <p>This app will continue to evolve with additional features including correlation searches, threat intelligence integration, automated alerting, and expanded MITRE ATTACK coverage.</p>
+    
+    <p><strong>Target Audience:</strong></p>
+    <p>This app is intended for security analysts, detection engineers, and SOC teams who are developing and testing security content. Access requires appropriate permissions to security-related indexes and data sources.</p>
+    
+    <p><em>Note: This is a development and testing environment. Some dashboards and searches reference attack datasets specifically ingested for detection engineering purposes.</em></p>
+  </html>
+</panel>
