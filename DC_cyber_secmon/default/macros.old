@@ -1,3 +1,0 @@
-[cim_Authentication_indexes]
-definition = index=attack_data (sourcetype="o365:management:activity")
-iseval = 0
