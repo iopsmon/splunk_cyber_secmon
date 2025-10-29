@@ -195,9 +195,9 @@
           <query>index=notable 
 | search severity="$severity_filter$" alert_id="$category_filter$"
 | eval alert_time=strftime(_time, "%Y-%m-%d %H:%M:%S")
-| table alert_time, event_time, alert_id, alert_name, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source
+| table event_time, alert_id, alert_name, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source
 | rename alert_time as "Alert Time", event_time as "Event Time", alert_id as "Alert ID", alert_name as "Alert Name", severity as "Severity", src_entity as "Source Entity", process_info as "Process/Service", target_info as "Target", additional_context as "Context", mitre_technique_id as "MITRE Technique", mitre_tactic as "MITRE Tactic", data_source as "Data Source"
-| sort "Event Time"</query>
+| sort - "Event Time"</query>
           <earliest>$time_token.earliest$</earliest>
           <latest>$time_token.latest$</latest>
         </search>

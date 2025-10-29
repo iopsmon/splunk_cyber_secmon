@@ -1,0 +1,11 @@
+process_name,status,category,risk_level,description
+sysmon64.exe,allowed,monitoring,low,Sysmon system monitoring tool
+svchost.exe,allowed,system,low,Windows service host process
+powershell.exe,blocked,scripting,high,PowerShell execution - potential malicious scripting
+cmd.exe,allowed,system,medium,Windows command prompt - monitor for suspicious usage
+lsass.exe,allowed,system,critical,Local Security Authority Subsystem - monitor for access attempts
+wmiprvse.exe,allowed,system,medium,WMI Provider Host - monitor for lateral movement
+splunkd.exe,allowed,monitoring,low,Splunk daemon process
+WinrsHost.exe,allowed,remote,medium,Windows Remote Shell host
+splunk-powershell.exe,allowed,monitoring,low,Splunk PowerShell integration
+btool.exe,allowed,monitoring,low,Splunk btool utility
