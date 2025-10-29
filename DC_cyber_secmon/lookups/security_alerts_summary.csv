@@ -1,5 +1,7 @@
 alert_id,alert_name,severity,mitre_technique_id,mitre_technique_name,mitre_tactic,data_source,field_mapping
 END_ALT-001,Suspicious Registry Modification via Direct Device Access,medium,T1112,Modify Registry,Defense Evasion,Sysmon,Computer|Image|registry_path
+END_ALT-002,Blocked Process Execution Detected,high,T1059,Command and Scripting Interpreter,Execution,Sysmon,command_lines|Image|Computer
+END_ALT-003,Unauthorised Privilege Escalation,high,T1548.003,Sudo and Sudo Caching,Privilege Escalation,Linux Secure Logs,priv_username|username|process|dvc
 NET_ALT-001,Suspicious Outbound Connection,high,T1071,Application Layer Protocol,Command and Control,Firewall,src_ip|dest_ip|dest_port
 WEB_ALT-001,SQL Injection Attempt,critical,T1190,Exploit Public-Facing Application,Initial Access,Web Proxy,client_ip|url|user_agent
 IAM_ALT-001,Multiple Failed Logons,medium,T1110,Brute Force,Credential Access,Windows Security,user|src_ip|logon_type

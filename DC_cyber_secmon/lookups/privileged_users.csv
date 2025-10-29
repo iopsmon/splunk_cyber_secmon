@@ -1,0 +1,13 @@
+priv_username,status,role,risk_level,team,description
+root,authorised,system_admin,critical,IT Operations,Root system account
+sysadmin,authorised,system_admin,high,IT Operations,Primary system administrator
+dbadmin,authorised,database_admin,high,Database Team,Database administration account
+secadmin,authorised,security_admin,high,Security Team,Security operations account
+splunkadmin,authorised,application_admin,medium,Monitoring Team,Splunk administration
+splunk,authorised,application_admin,medium,Monitoring Team,Splunk administration
+serviceaccount1,authorised,service_account,medium,Engineering,Automated service account
+contractor_temp,unauthorised,temporary,high,External,Temporary contractor - should not use sudo
+developer1,unauthorised,developer,medium,Engineering,Developer - no sudo access required
+analyst1,unauthorised,analyst,low,Security Team,Analyst - read-only access only
+joffrey,unauthorised,system_admin,high,Lannister Team,Tester - no sudo access required
+

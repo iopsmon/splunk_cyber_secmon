@@ -19,9 +19,19 @@ Add alert metadata to `iops_security_alerts_summary.csv` for dashboard normaliza
 alert_id,alert_name,severity,mitre_technique_id,mitre_technique_name,mitre_tactic,data_source
 ```
 
-Verify lookup is accessible:
+Verify lookups are accessible:
 ```spl
+Contains key security alerts
 | inputlookup iops_security_alerts_summary
+
+Contains privilage users
+| inputlookup iops_linux_priv_users
+
+Contains Key Windows Allowed Process
+| inputlookup iops_win_exec_process 
+
+Contains Key Mitre Attack Techniques
+| inputlookup iops_mitre_id
 ```
 
 ### Step 3: Detection Development
@@ -45,8 +55,10 @@ Verify lookup is accessible:
 
 | Alert ID | Alert Name | Category | Severity | MITRE Technique | Status | Last Updated |
 |----------|------------|----------|----------|-----------------|--------|--------------|
-| END_ALT-001 | Suspicious Registry Modification via Direct Device Access | Endpoint | Medium | T1112 | Active | Oct 2024 |
-| IAM_ALT-001 | Multiple Failed Logons | Identity & Access | Medium | T1110 | Active | Oct 2024 |
+| END_ALT-001 | Suspicious Registry Modification via Direct Device Access | Endpoint | Medium | T1112 | Active | Oct 2025 |
+| END_ALT-002 | Blocked Process Execution Detected| Endpoint | High| T1059 | Active | Oct 2025 |
+| END_ALT-003 | User account has Logged in as root Endpoint | High| T1548.003 | Active | Oct 2025 |
+| IAM_ALT-001 | Multiple Failed Logons | Identity & Access | Medium | T1110 | Active | Oct 2025 |
 
 ---
 
@@ -82,26 +94,26 @@ python3 bin/replay.py datasets/attack_techniques/T1003.001/atomic_red_team/atomi
 
 #### Detection Logic (SPL)
 ```spl
-index=attack_data 
-source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" 
-EventCode=13 
-Image="\\\\?\\*" 
-earliest=0 latest=now
-| eval alert_name="Suspicious Registry Modification via Direct Device Access" 
-| eval severity="medium" 
-| eval mitre_technique_id="T1112" 
-| eval mitre_technique_name="Modify Registry" 
-| eval mitre_tactic="Defense Evasion"
-| eval suspicious_reason="Image path begins with \\\\?\\ (direct device access) - potential evasion technique" 
-| eval alert_time=strftime(_time, "%Y-%m-%d %H:%M:%S") 
-| stats count BY Image, _time, alert_name, severity, Computer, registry_path, suspicious_reason, mitre_technique_id, mitre_technique_name, mitre_tactic, process_guid, process_id
-| where count > 0 
-| sort - alert_time
+index=attack_data  source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=13 Image="\\\\?\\*" earliest=0 latest=now
+| fields _time, source, sourcetype, host, Computer, TargetObject, registry_path,CommandLine EventCode, EventDescription,EventID, EventType, ClientInfo
+| eval alert_name="Suspicious Registry Modification via Direct Device Access"
+| eval suspicious_reason="Image path begins with \\\\?\\ (direct device access) - potential evasion technique"
+| eval event_time = _time 
+| eval event_time=strftime(event_time, "%Y-%m-%d %H:%M:%S")
+| eval alert_time=strftime(_time, "%Y-%m-%d %H:%M:%S")
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity
+| eval src_entity=coalesce(Computer, host)
+| eval process_info=coalesce(Image, "N/A")
+| eval target_info=coalesce(TargetObject, registry_path, "N/A")
+| eval additional_context=suspicious_reason
+| table _time, alert_id, alert_name, event_time,severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source
+| collect index=notable
 ```
 
 #### Alert Configuration (`savedsearches.conf`)
 ```ini
 [END_ALT-001]
+action.email.use_ssl = 0
 action.webhook.enable_allowlist = 0
 alert.expires = 15m
 alert.suppress = 1
@@ -109,7 +121,7 @@ alert.suppress.period = 60m
 alert.track = 1
 counttype = number of events
 cron_schedule = */5 * * * *
-description = This monitors for suspicious Registry Modification via Direct Device Access
+description = This monitors for suspicious Registry Modification via Direct Device Access"
 dispatch.earliest_time = 0
 display.events.maxLines = 20
 display.general.type = statistics
@@ -117,10 +129,23 @@ display.page.search.tab = statistics
 enableSched = 1
 quantity = 0
 relation = greater than
-request.ui_dispatch_app = DC_cyber_secmon
+request.ui_dispatch_app = search
 request.ui_dispatch_view = search
-search = index=attack_data source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=13 Image="\\\\?\\C:\\Windows\\system32\\wbem\\WMIADAP.EXE"
-disabled = 1
+search = index=attack_data  source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=13 Image="\\\\?\\*" earliest=0 latest=now\
+| fields _time, source, sourcetype, host, Computer, TargetObject, registry_path,CommandLine EventCode, EventDescription,EventID, EventType, ClientInfo\
+| eval alert_name="Suspicious Registry Modification via Direct Device Access"\
+| eval suspicious_reason="Image path begins with \\\\?\\ (direct device access) - potential evasion technique"\
+| eval event_time = _time \
+| eval event_time=strftime(event_time, "%Y-%m-%d %H:%M:%S")\
+| eval alert_time=strftime(_time, "%Y-%m-%d %H:%M:%S")\
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity\
+| eval src_entity=coalesce(Computer, host)\
+| eval process_info=coalesce(Image, "N/A")\
+| eval target_info=coalesce(TargetObject, registry_path, "N/A")\
+| eval additional_context=suspicious_reason\
+| table _time, alert_id, alert_name, event_time,severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source\
+| collect index=notable
+
 ```
 
 #### Key Fields
@@ -153,7 +178,346 @@ disabled = 1
 4. **Examine timeline:** Look for related suspicious activity before/after
 5. **Escalate if:** Unknown process, persistence mechanism created, or indicators of malware
 
----
+### END_ALT-002: Blocked Process Execution Detected
+
+#### Overview
+**Status:** ✅ Active  
+**Category:** Endpoint (END)  
+**MITRE ATT&CK:** T11059 - Execution 
+**Tactic:** Command and Scripting Interpreter 
+**Severity:** High 
+**Data Source:** Sysmon
+
+#### Description
+ Sysmon logs detected processes being blocked. This could indicate attempts to execute malicious 
+software, unauthorized scripts, or legitimate applications flagged as risky.
+The alert classifies the risk level of the blocked processes (e.g., "critical," "high," "medium") 
+based on a lookup table that assigns severity scores to known processes and their behaviors.
+
+The alert provides:
+    - The name(s) of the blocked process(es).
+    - A description from the security database explaining why these processes are considered risky.
+    - The number of times each blocked process was executed across different hosts.
+    - The unique number of hosts affected by the blocked processes.
+MITRE Mapping: The alert links the blocked process activity to specific MITRE ATT&CK tactics and 
+techniques, providing a framework for understanding the broader cybersecurity context
+
+#### Attack Data Ingestion
+```bash
+# Pull the dataset from Splunk Attack Data repository
+git lfs pull --include="datasets/attack_techniques/T1003.001/atomic_red_team/windows-sysmon.log"
+
+##Push  Data This pushes data as json to HEC 
+
+python3 bin/replay.py datasets/attack_techniques/T1003.001/atomic_red_team/atomic_red_team.yml
+
+
+# Ingest via manual upload or replay script
+# Target index: attack_data
+# Sourcetype: XmlWinEventLog:Microsoft-Windows-Sysmon/Operational
+```
+
+#### Detection Logic (SPL)
+```spl
+index=attack_data sourcetype=XmlWinEventLog source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" process_name=*
+earliest=0 
+```Pull the fields of interest - imporves searche speed```
+| fields _time, source, sourcetype, process_name, Computer, CommandLine, User, Image
+```check lookup for blocked exec process - these would be blocked```
+| lookup iops_win_exec_process process_name OUTPUT status, category, risk_level, description
+| where status="blocked" OR risk_level="critical"
+| eval alert_name="Blocked Process Execution Detected"
+```Add evals```
+| eval suspicious_reason="Execution of blocked process: " . process_name . " - " . description
+| eval event_time=strftime(event_time, "%Y-%m-%d %H:%M:%S")
+| eval alert_time=strftime(_time, "%Y-%m-%d %H:%M:%S")
+| eval src_entity=coalesce(Computer, host)
+| eval process_info=Image
+| eval target_info=coalesce(CommandLine, "N/A")
+| eval additional_context=suspicious_reason . " | Risk: " . risk_level . " | Category: " . category . " | User: " . coalesce(User, "Unknown")
+| eval event_time = _time
+```aggregate using stats```
+| stats 
+    count as execution_count,
+    dc(Computer) as unique_hosts,
+    values(Computer) as affected_hosts,
+    values(User) as users,
+    values(CommandLine) as command_lines,
+    min(_time) as first_seen,
+    max(_time) as last_seen
+    by process_name, event_time, Image, risk_level, category
+| where execution_count > 0 
+| eval event_time=strftime(event_time, "%Y-%m-%d %H:%M:%S")
+| eval alert_time=strftime(first_seen, "%Y-%m-%d %H:%M:%S")
+| eval alert_name="Blocked Process Execution Detected"
+| eval suspicious_reason="Blocked process '" . process_name . "' executed " . execution_count . " times across " . unique_hosts . " host(s)"
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity
+| eval src_entity=affected_hosts
+| eval process_info=Image
+| eval target_info=command_lines
+| eval additional_context=suspicious_reason . " | Risk: " . risk_level . " | Users: " . users
+| table alert_time, alert_id, alert_name, event_time, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source, execution_count, unique_hosts, risk_level
+| sort - execution_count
+| collect index=notable
+
+```
+
+#### Alert Configuration (`savedsearches.conf`)
+```ini
+[END_ALT-002]
+action.webhook.enable_allowlist = 0
+alert.expires = 30h
+alert.suppress = 1
+alert.suppress.period = 60s
+alert.track = 1
+counttype = number of events
+cron_schedule = */10 * * * *
+description = Blocked Process Execution Detectedl Failed
+dispatch.earliest_time = 0
+display.events.maxLines = 20
+display.general.type = statistics
+display.page.search.tab = statistics
+enableSched = 1
+quantity = 0
+relation = greater than
+request.ui_dispatch_app = DC_cyber_secmon
+request.ui_dispatch_view = search
+search = index=attack_data sourcetype=XmlWinEventLog source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" process_name=*\
+earliest=0 \
+```check lookup for blocked exec process```\
+| lookup iops_win_exec_process process_name OUTPUT status, category, risk_level, description\
+| where status="blocked" OR risk_level="critical"\
+| eval alert_name="Blocked Process Execution Detected"\
+| eval suspicious_reason="Execution of blocked process: " . process_name . " - " . description\
+| eval alert_time=strftime(_time, "%Y-%m-%d %H:%M:%S")\
+```check for alert id match and normalise the data for dashboards```\
+```| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity```\
+| eval src_entity=coalesce(Computer, host)\
+| eval process_info=Image\
+| eval target_info=coalesce(CommandLine, "N/A")\
+| eval additional_context=suspicious_reason . " | Risk: " . risk_level . " | Category: " . category . " | User: " . coalesce(User, "Unknown")\
+```get the stats count ```\
+| stats \
+    count as execution_count,\
+    dc(Computer) as unique_hosts,\
+    values(Computer) as affected_hosts,\
+    values(User) as users,\
+    values(CommandLine) as command_lines,\
+    min(_time) as first_seen,\
+    max(_time) as last_seen\
+    by process_name, Image, risk_level, category\
+| where execution_count > 0\
+| eval alert_time=strftime(first_seen, "%Y-%m-%d %H:%M:%S")\
+| eval alert_name="Blocked Process Execution Detected"\
+| eval suspicious_reason="Blocked process '" . process_name . "' executed " . execution_count . " times across " . unique_hosts . " host(s)"\
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity\
+| eval src_entity=affected_hosts\
+| eval process_info=Image\
+| eval target_info=command_lines\
+| eval additional_context=suspicious_reason . " | Risk: " . risk_level . " | Users: " . users\
+| table alert_time, alert_id, alert_name, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source, execution_count, unique_hosts, risk_level\
+| sort - execution_count\
+| collect index=notable
+
+```
+
+#### Key Fields
+- **process_name:** Unique process name
+- **status:** Is the value blocked or allowed 
+- **risk_level:** "critical"
+
+#### Detection Tuning
+- **False Positives:** Legitimate system processes exec names  (e.g. sysmon64, splunkd.exe, btool.exe)
+- **Tuning Recommendations:**
+  - Update the lookup file Whitelist: `win_process_exec.csv`
+  
+
+#### Testing Notes
+- ✅ Verified detection fires on sample attack data
+- ✅ Alert successfully writes to `notable` index
+- ✅ Dashboard visualization confirmed
+- ⚠️ Schedule set to `*/10* * * *` (every 5 minutes) - monitor for concurrency issues
+- ⚠️ Search period set to `earliest=0` (all time) - change to `-5m` or `-10m` in production
+
+#### Response Guidance
+1. **Investigate the process:** Check if the Image path is legitimate or suspicious
+2. **Review allowed processes :** Determine what is allowed and not - check the command CLI
+3. **Check process parent:** Identify what spawned this process
+4. **Examine timeline:** Look for related suspicious activity before/after
+5. **Escalate if:** Unknown process, persistence mechanism created, or indicators of malware
+
+
+
+### END_ALT-003: Unauthorised Sudo Privilege Escalation
+
+#### Overview
+**Status:** ✅ Active  
+**Category:** Endpoint (END)  
+**MITRE ATT&CK:** T1548.003  
+**Tactic:** Privilege Escalation 
+**Severity:** High 
+**Data Source:** Linux Secure Logs
+
+#### Description
+ Linux Secure logs detected unauthorised users switching to root user processes being blocked. 
+ This could indicate attempts to execute malicious commands, exfil run scripts - change config.
+software, unauthorized scripts, or legitimate applications flagged as risky.
+The alert classifies the risk level of ("critical," "high," "medium") 
+based on a lookup table that assigns severity scores to known users their access levels.
+
+The alert provides:
+    - The name(s) of the users not authorised to access the server.
+    - A description from the security database explaining why these processes are considered risky.
+    - The number of times each user swithces to root.
+    - The unique number of hosts affected by the users.
+MITRE Mapping: The alert links the  activity to specific MITRE ATT&CK tactics and 
+techniques, providing a framework for understanding the broader cybersecurity context
+
+#### Attack Data Ingestion
+```bash
+# The dataset from Splunk Nix TA inputs Attack Data repository
+# Ingest via manual upload or replay script
+# Target index: index=linux source="/var/log/secure"
+# Sourcetype: linux_secure
+```
+
+#### Detection Logic (SPL)
+```spl
+index=linux sourcetype=linux_secure source="/var/log/secure" (process="sudo" OR process="su") earliest=-10m latest=now 
+| fields count, _time, _raw, source, sourcetype, action, app, dest, eventtype, host, process, user_name, dvc, priv_username
+    ```SUB search ```
+| join [search index=linux sourcetype=linux_secure source="/var/log/secure" "session opened for user root" earliest=-10h latest=now 
+| rex field=_raw "session opened for user root\(uid=0\) by\s*(?<priv_username>\w+)\("
+    ] 
+    ```lookup for unauthorised users```
+| lookup iops_linux_priv_users priv_username  OUTPUT priv_username, status, description,risk_level,role,team
+| where status="unauthorised"
+    ```aggreate stats ```
+| stats count AS execution_count, values(user_name), values(dest) AS dest, values(host) AS host , values(process) AS process values(priv_username) AS priv_username values(risk_level) as risk_level BY _time, user_name 
+| rename values(user_name) AS root_user 
+| where (process="su") 
+| stats 
+    count as execution_count,
+    dc(dest) as unique_hosts,
+    values(dest) as affected_hosts,
+    values(priv_username) as priv_username
+    values(risk_level) as risk_level
+    values(process) as process_info
+    values(dest) as source_ip
+    values(_time) as event_time
+    min(_time) as first_seen,
+    max(_time) as last_seen 
+    by user_name, _time 
+| where execution_count >= 0 
+| eval alert_name="Unauthorised Privilege Escalation" 
+| eval suspicious_reason="User account has Logged in as root" 
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity 
+| eval event_time=strftime(event_time, "%Y-%m-%d %H:%M:%S") 
+| eval alert_time=strftime(first_seen, "%Y-%m-%d %H:%M:%S") 
+| eval duration_minutes=round((last_seen - first_seen) / 60, 2) 
+| eval target_info=source_ip 
+| eval src_entity=priv_username
+| eval additional_context=suspicious_reason 
+    ```table the results``` 
+| table alert_id, alert_name, event_time, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source, execution_count, unique_hosts, risk_level 
+| sort - execution_count 
+| sort - _time
+``` send data to notable```
+| collect index=notable
+```
+
+#### Alert Configuration (`savedsearches.conf`)
+```ini
+[END_ALT-003]
+action.webhook.enable_allowlist = 0
+alert.expires = 60m
+alert.suppress = 1
+alert.suppress.period = 15m
+alert.track = 1
+counttype = number of events
+cron_schedule = */5 * * * *
+description = Unauthorised Privilege Escalation
+dispatch.earliest_time = -24h@h
+dispatch.latest_time = now
+display.events.fields = ["host","source","sourcetype","sudo_user","dvc","COMMAND","USER","process","user_name","original_user"]
+display.events.maxLines = 20
+display.general.type = statistics
+display.page.search.mode = verbose
+display.page.search.tab = statistics
+enableSched = 1
+quantity = 0
+relation = greater than
+request.ui_dispatch_app = DC_cyber_secmon
+request.ui_dispatch_view = search
+search = index=linux sourcetype=linux_secure source="/var/log/secure" (process="sudo" OR process="su") earliest=-10m latest=now \
+| fields count, _time, _raw, source, sourcetype, action, app, dest, eventtype, host, process, user_name, dvc, priv_username\
+    ```SUB search ```\
+| join [search index=linux sourcetype=linux_secure source="/var/log/secure" "session opened for user root" earliest=-10m latest=now \
+| rex field=_raw "session opened for user root\(uid=0\) by\s*(?<priv_username>\w+)\("\
+    ] \
+    ```lookup for unauthorised users```\
+| lookup iops_linux_priv_users priv_username  OUTPUT priv_username, status, description,risk_level,role,team\
+| where status="unauthorised"\
+    ```aggreate stats ```\
+| stats count AS execution_count, values(user_name), values(dest) AS dest, values(host) AS host , values(process) AS process values(priv_username) AS priv_username values(risk_level) as risk_level BY _time, user_name \
+| rename values(user_name) AS root_user \
+| where (process="su") \
+| stats \
+    count as execution_count,\
+    dc(dest) as unique_hosts,\
+    values(dest) as affected_hosts,\
+    values(priv_username) as priv_username\
+    values(risk_level) as risk_level\
+    values(process) as process_info\
+    values(dest) as source_ip\
+    values(_time) as event_time\
+    min(_time) as first_seen,\
+    max(_time) as last_seen \
+    by user_name, _time \
+| where execution_count >= 0 \
+| eval alert_name="Unauthorised Privilege Escalation" \
+| eval suspicious_reason="User account has Logged in as root" \
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity \
+| eval event_time=strftime(event_time, "%Y-%m-%d %H:%M:%S") \
+| eval alert_time=strftime(first_seen, "%Y-%m-%d %H:%M:%S") \
+| eval duration_minutes=round((last_seen - first_seen) / 60, 2) \
+| eval target_info=source_ip \
+| eval src_entity=priv_username\
+| eval additional_context=suspicious_reason \
+    ```table the results``` \
+| table alert_id, alert_name, event_time, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source, execution_count, unique_hosts, risk_level \
+| sort - execution_count \
+| sort - _time\
+``` send data to notable```
+| collect index=notable
+
+```
+#### Key Fields
+- **sudo_user** Unique user name that run sudo - 
+- **username:** Is the value in the lookupfile for privilaged users status = authorised or unauthorised
+- **risk_level:** "critical"
+
+#### Detection Tuning
+- **False Positives:** Legitimate system processes exec names  (e.g. sysmon64, splunkd.exe, btool.exe)
+- **Tuning Recommendations:**
+  - Update the lookup file Whitelist: `privileged_users.csv`
+  
+
+#### Testing Notes
+- ✅ Verified detection fires on sample attack data via nix TA 
+- ✅ Alert successfully writes to `notable` index
+- ✅ Dashboard visualization confirmed
+- ⚠️ Schedule set to `*/5 * * * *` (every 5 minutes) - monitor for concurrency issues
+- ⚠️ Search period set to `earliest=0` (all time) - change to `-5m` or `-10m` in production
+
+#### Response Guidance
+1. **Investigate the process:** Check if user was allowed the is legitimate or suspicious
+2. **Review allowed processes :** Determine what is authorised and not - check policy - RBAC
+3. **Examine timeline:** Look for related suspicious activity before/after
+5. **Escalate if:** Not authorised
+
+
+
 
 ## IDENTITY & ACCESS MANAGEMENT (IAM) USE CASES
 
@@ -358,12 +722,17 @@ IAM_ALT-001,Multiple Failed Logons,medium,T1110,Brute Force,Credential Access,Of
 
 2. **Alert Schedules:**
    - END_ALT-001: Every 5 minutes (`*/5 * * * *`)
+   - END_ALT-002: Every 6 minutes (`*/10 * * * *`)
+   - END_ALT-003: Every 5 minutes (`*/5 * * * *`)
    - IAM_ALT-001: Every 6 minutes (`*/6 * * * *`)
+
    - Recommendation: Stagger schedules to avoid concurrent searches
    - Monitor: Check `_internal` logs for search concurrency warnings
 
 3. **Suppression Periods:**
    - END_ALT-001: 60 minutes
+   - END_ALT-002: 60 minutes
+   - END_ALT-003: 60 minutes
    - IAM_ALT-001: 60 seconds
    - Recommendation: Align suppression with schedule frequency to avoid duplicate alerts
 
@@ -407,7 +776,7 @@ Every alert should enrich with MITRE ATT&CK metadata:
 Final output should be written to notable index:
 
 ```spl
-| table alert_time, alert_id, alert_name, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source
+| table alert_time, alert_id, alert_name, event_time, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source
 | collect index=notable sourcetype=notable_events
 ```
 
@@ -430,7 +799,7 @@ Final output should be written to notable index:
 - WEB_ALT-004: Web Shell Activity
 
 #### Additional Endpoint (END) Category
-- END_ALT-002: Suspicious PowerShell Execution
+- END_ALT-002: Suspicious PowerShell Execution - DONE
 - END_ALT-003: Credential Dumping (LSASS Access)
 - END_ALT-004: Persistence via Startup Folder
 - END_ALT-005: DLL Injection Techniques
@@ -526,12 +895,15 @@ index=_internal source=*scheduler.log* status=continued
 
 ---
 
-## Version History
+## App Version History
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
-| 1.0 | Oct 2025| Initial release with END_ALT-001 | Security Team |
-| 1.1 | Oct 2025 | Added IAM_ALT-001 O365 brute force detection | Security Team |
+| 1.0.0 | Oct 2025| Initial release with END_ALT-001 | Security Team |
+| 1.1.0 | Oct 2025 | Added IAM_ALT-001 O365 brute force detection | Security Team |
+| 1.2.0 | Oct 2025 | Added END_ALT-002 sysmon Blocked Process Execution Detected | Security Team |
+| 1.2.0 | Oct 2025 | Added END_ALT-003 Unauthorised Sudo Privilege Escalation | Security Team |
+
 
 ---
 
@@ -546,5 +918,6 @@ For questions, issues, or suggestions regarding these use cases:
 ---
 
 **Document Status:** Active  
-**Last Updated:** October 2024  
+**Last Updated:** October 2025  
 **Next Review:** Monthly
+
