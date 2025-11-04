@@ -5,16 +5,19 @@
 <collection label="Security Monitoring">
 <view name="uni_alerts" />"
 <divider />
-<view name="summary_report" />
+<view name="incidents" />
 <divider />
 <view name="alerts_overview" />
 <divider />
 <view name="alert_lookup" />
 <divider />
+<view name="mgr_report" />
+<divider />
 </collection>
 
 <collection label="Help">
 	<view name="cyber_app_info"/>
+	<view name="sec_app_analytics"/>
 	</collection>
 
 <collection label="Search">

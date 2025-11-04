@@ -1,20 +1,142 @@
 <form version="1.1" theme="dark">
   <label>Alerts Overview</label>
   <description>Shows the Alerts</description>
-  <fieldset submitButton="false">
-    <input type="dropdown" token="category_filter">
-      <label>Alert Category</label>
-      <choice value="*">All Categories</choice>
-      <choice value="END*">Endpoint (END)</choice>
-      <choice value="NET*">Network (NET)</choice>
-      <choice value="WEB*">Web (WEB)</choice>
-      <choice value="IAM*">Identity (IAM)</choice>
-      <default>*</default>
-    </input>
-  </fieldset>
+  <fieldset submitButton="false"></fieldset>
   <row>
     <panel>
-      <title>Alerts</title>
+      <title>Alert Status</title>
+      <single>
+        <search>
+          <query>| rest splunk_server=* /services/saved/searches
+| fields splunk_server, author, title, disabled, eai:acl.app
+| search eai:acl.app = DC_cyber_secmon
+| rename title AS saved_search_name
+| search saved_search_name=*
+| eval is_enabled = case(disabled &gt;= 1, "disabled", 1=1, "enabled")
+| stats count(eval(is_enabled="disabled")) AS Disabled_Alert_Count, count(eval(is_enabled="enabled")) AS Enabled_Alert_Count
+```| rest splunk_server=* /services/saved/searches 
+| fields splunk_server, author, title, disabled, eai:acl.app
+| search eai:acl.app = DC_cyber_secmon
+| rename title AS saved_search_name  
+| search saved_search_name=*
+| eval is_enabled = case(disabled &gt;=1, "disabled",1=1, "enabled")
+| stats sum(disabled) as disabled, sum(enabled) as enabled```</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+          <refresh>5m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x118832","0x118832"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">large</option>
+        <option name="trellis.splitBy">_aggregation</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="underLabel">Alert Status</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Alerts Fired</title>
+      <chart>
+        <search>
+          <query>index=_audit action="alert_fired" 
+ | rename ss_name AS title 
+ | timechart count by title</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+          <refresh>5m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">402</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Alerts Lookup</title>
+      <table>
+        <search>
+          <query>| inputlookup iops_security_alerts_summary</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+          <refresh>60m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Alerts Config</title>
+      <input type="dropdown" token="category_filter">
+        <label>Alert Category</label>
+        <choice value="*">All Categories</choice>
+        <choice value="END*">Endpoint (END)</choice>
+        <choice value="NET*">Network (NET)</choice>
+        <choice value="WEB*">Web (WEB)</choice>
+        <choice value="IAM*">Identity (IAM)</choice>
+        <default>*</default>
+      </input>
+      <input type="text" token="search_alert" searchWhenChanged="true">
+        <label>search alert name - add esc \"</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
       <table>
         <search>
           <query>| rest splunk_server=* /services/saved/searches 
@@ -25,7 +147,8 @@
 | rex field=spl_code "(?&lt;alert_name&gt;\|\seval\salert_name=.*)"
 | rex mode=sed field=alert_name  "s/\| eval alert_name=/""/g"
 | eval is_enabled = case(disabled &gt;=1, "disabled",1=1, "enabled") 
-| table splunk_server, author, saved_search_name, alert_name,disabled, is_enabled, app, owner, sharing, spl_code, alert.suppress.period, cron_schedule</query>
+| search alert_name=$search_alert$
+| table splunk_server, author, saved_search_name, alert_name, disabled, is_enabled, app, owner, sharing, spl_code, alert.suppress.period, cron_schedule</query>
           <earliest>-24h@h</earliest>
           <latest>now</latest>
           <sampleRatio>1</sampleRatio>

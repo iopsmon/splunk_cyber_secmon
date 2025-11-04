@@ -1,0 +1,7 @@
+username,full_name,email,role,team,status
+john.smith,John Smith,john.smith@company.com,SOC Analyst L1,Security Operations,active
+jane.doe,Jane Doe,jane.doe@company.com,SOC Analyst L2,Security Operations,active
+mike.johnson,Mike Johnson,mike.johnson@company.com,SOC Lead,Security Operations,active
+sarah.williams,Sarah Williams,sarah.williams@company.com,Incident Responder,Incident Response,active
+alex.brown,Alex Brown,alex.brown@company.com,Security Engineer,Security Engineering,active
+unassigned,Unassigned,noreply@company.com,N/A,N/A,active

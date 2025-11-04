@@ -104,9 +104,13 @@
           <earliest>$time_token.earliest$</earliest>
           <latest>$time_token.latest$</latest>
         </search>
+        <option name="colorMode">block</option>
         <option name="drilldown">none</option>
+        <option name="rangeColors">["0x1182f3","0x1182f3"]</option>
+        <option name="rangeValues">[0]</option>
         <option name="refresh.display">progressbar</option>
         <option name="underLabel">Unique Techniques</option>
+        <option name="useColors">1</option>
       </single>
     </panel>
   </row>
@@ -190,16 +194,77 @@
   <row>
     <panel>
       <title>Detailed Alert View (All Categories)</title>
+      <input type="time" token="detail_alert_time" searchWhenChanged="true">
+        <label>detail_alert_time</label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="dropdown" token="detail_severity" searchWhenChanged="true">
+        <label>detail_severity</label>
+        <search>
+          <query>index=notable 
+| search severity="*" 
+| table severity
+| dedup severity</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="*">All Severities</choice>
+        <default>*</default>
+        <fieldForLabel>severity</fieldForLabel>
+        <fieldForValue>severity</fieldForValue>
+      </input>
+      <input type="dropdown" token="sec_mitre_tactic" searchWhenChanged="true">
+        <label>mitre_tactic</label>
+        <search>
+          <query>index=notable 
+| search mitre_tactic"*" 
+| table mitre_tactic
+| dedup mitre_tactic</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="*">All Mitre Tacktics</choice>
+        <fieldForLabel>mitre_tactic</fieldForLabel>
+        <fieldForValue>mitre_tactic</fieldForValue>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="dropdown" token="mitre_id" searchWhenChanged="true">
+        <label>mitre_id</label>
+        <search>
+          <query>index=notable 
+| search mitre_technique_id="*" 
+| table mitre_technique_id
+| dedup mitre_technique_id</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="*">All Mitre ID's</choice>
+        <fieldForLabel>mitre_technique_id</fieldForLabel>
+        <fieldForValue>mitre_technique_id</fieldForValue>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <input type="text" token="sec_search_entitiy" searchWhenChanged="true">
+        <label>search_entitiy</label>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
       <table>
         <search>
           <query>index=notable 
-| search severity="$severity_filter$" alert_id="$category_filter$"
+| search severity="$detail_severity$" mitre_technique_id="$mitre_id$" mitre_tactic="$sec_mitre_tactic$" src_entity="$sec_search_entitiy$"
 | eval alert_time=strftime(_time, "%Y-%m-%d %H:%M:%S")
-| table alert_time, event_time, alert_id, alert_name, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source
+| table event_time, alert_id, alert_name, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source
 | rename alert_time as "Alert Time", event_time as "Event Time", alert_id as "Alert ID", alert_name as "Alert Name", severity as "Severity", src_entity as "Source Entity", process_info as "Process/Service", target_info as "Target", additional_context as "Context", mitre_technique_id as "MITRE Technique", mitre_tactic as "MITRE Tactic", data_source as "Data Source"
-| sort "Event Time"</query>
-          <earliest>$time_token.earliest$</earliest>
-          <latest>$time_token.latest$</latest>
+| sort - "Event Time"</query>
+          <earliest>$detail_alert_time.earliest$</earliest>
+          <latest>$detail_alert_time.latest$</latest>
+          <refresh>5m</refresh>
+          <refreshType>delay</refreshType>
         </search>
         <option name="count">5</option>
         <option name="drilldown">row</option>
