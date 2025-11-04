@@ -1,0 +1,459 @@
+<form script="create_incident.js" theme="dark" version="1.1">
+  <label>Security Incidents</label>
+  <description>View and manage security incidents from the KVStore</description>
+  <!-- Filter Controls -->
+  <!-- Row 1: Summary Statistics -->
+  <!-- Row 2: Charts -->
+  <!-- Row 3: Detailed Incidents Table -->
+  <!-- Row 4: Incident Assignment Summary -->
+  <!-- Row 5: Recent Activity -->
+  <!-- Row: Create New Incident from Notable Alert -->
+  <fieldset submitButton="true" autoRun="true">
+    <input type="dropdown" token="status_filter">
+      <label>Status</label>
+      <choice value="*">All Statuses</choice>
+      <choice value="open">Open</choice>
+      <choice value="investigating">Investigating</choice>
+      <choice value="closed">Closed</choice>
+      <default>*</default>
+    </input>
+    <input type="dropdown" token="severity_filter">
+      <label>Severity</label>
+      <choice value="*">All Severities</choice>
+      <choice value="critical">Critical</choice>
+      <choice value="high">High</choice>
+      <choice value="medium">Medium</choice>
+      <choice value="low">Low</choice>
+      <default>*</default>
+    </input>
+    <input type="dropdown" token="assigned_filter">
+      <label>Assigned To</label>
+      <choice value="*">All Users</choice>
+      <choice value="unassigned">Unassigned</choice>
+      <search>
+        <query>
+| inputlookup security_incidents
+| stats count by assigned_to
+| where assigned_to!="unassigned"
+| table assigned_to
+        </query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <fieldForLabel>assigned_to</fieldForLabel>
+      <fieldForValue>assigned_to</fieldForValue>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Total Incidents</title>
+      <single>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search status="$status_filter$" severity="$severity_filter$" assigned_to="$assigned_filter$"
+| stats count
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xF58F39","0xD93F3C"]</option>
+        <option name="rangeValues">[0,5,10]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Open Incidents</title>
+      <single>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search status="open" severity="$severity_filter$" assigned_to="$assigned_filter$"
+| stats count
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xF58F39","0xD93F3C"]</option>
+        <option name="rangeValues">[0,3,7]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Investigating</title>
+      <single>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search status="investigating" severity="$severity_filter$" assigned_to="$assigned_filter$"
+| stats count
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38"]</option>
+        <option name="rangeValues">[0,5]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Unassigned</title>
+      <single>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search assigned_to="unassigned" status="$status_filter$" severity="$severity_filter$"
+| stats count
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
+        <option name="rangeValues">[0,2]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Incidents by Status</title>
+      <chart>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search severity="$severity_filter$" assigned_to="$assigned_filter$"
+| stats count by status
+| sort - count
+          </query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.seriesColors">[0x65A637,0xF7BC38,0xD93F3C]</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Incidents by Severity</title>
+      <chart>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search status="$status_filter$" assigned_to="$assigned_filter$"
+| stats count by severity
+| sort - count
+          </query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.seriesColors">[0x65A637,0xF7BC38,0xF58F39,0xD93F3C]</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Incidents by MITRE Tactic</title>
+      <chart>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search status="$status_filter$" severity="$severity_filter$" assigned_to="$assigned_filter$"
+| stats count by mitre_tactic
+| sort - count
+          </query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.axisTitleX.text">Count</option>
+        <option name="charting.axisTitleY.text">MITRE Tactic</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Incident Details</title>
+      <table>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search status="$status_filter$" severity="$severity_filter$" assigned_to="$assigned_filter$"
+| eval created_time=strftime(created_time, "%Y-%m-%d %H:%M:%S")
+| eval updated_time=strftime(updated_time, "%Y-%m-%d %H:%M:%S")
+| table incident_id, alert_id, alert_name, severity, status, assigned_to, src_entity, mitre_technique_id, mitre_tactic, created_time, updated_time, description
+| rename incident_id as "Incident ID", alert_id as "Alert ID", alert_name as "Alert Name", severity as "Severity", status as "Status", assigned_to as "Assigned To", src_entity as "Source Entity", mitre_technique_id as "MITRE Technique", mitre_tactic as "MITRE Tactic", created_time as "Created", updated_time as "Last Updated", description as "Description"
+| sort - "Created"
+          </query>
+        </search>
+        <option name="drilldown">row</option>
+        <option name="count">20</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Severity">
+          <colorPalette type="map">{"critical":#D93F3C,"high":#F58F39,"medium":#F7BC38,"low":#65A637}</colorPalette>
+        </format>
+        <format type="color" field="Status">
+          <colorPalette type="map">{"open":#D93F3C,"investigating":#F7BC38,"closed":#65A637}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Incidents by Assigned User</title>
+      <table>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search status="$status_filter$" severity="$severity_filter$"
+| stats 
+    count as total_incidents,
+    count(eval(status="open")) as open_count,
+    count(eval(status="investigating")) as investigating_count,
+    count(eval(status="closed")) as closed_count,
+    values(severity) as severities
+    by assigned_to
+| sort - total_incidents
+| rename assigned_to as "Assigned To", total_incidents as "Total", open_count as "Open", investigating_count as "Investigating", closed_count as "Closed", severities as "Severities"
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="count">10</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Recently Updated Incidents</title>
+      <table>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search status="$status_filter$" severity="$severity_filter$" assigned_to="$assigned_filter$"
+| eval updated_time=strftime(updated_time, "%Y-%m-%d %H:%M:%S")
+| sort - updated_time
+| head 10
+| table incident_id, alert_name, severity, status, assigned_to, updated_time
+| rename incident_id as "Incident ID", alert_name as "Alert Name", severity as "Severity", status as "Status", assigned_to as "Assigned To", updated_time as "Last Updated"
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Severity">
+          <colorPalette type="map">{"critical":#D93F3C,"high":#F58F39,"medium":#F7BC38,"low":#65A637}</colorPalette>
+        </format>
+      </table>
+    </panel>
+    
+  </row>
+  <!-- Row: Create New Incident from Notable Alert -->
+  <row>
+    <panel>
+      <title>Create New Incident from Notable Alert</title>
+      <html>
+        <p><strong>Instructions:</strong> Select a notable alert below to create an incident. The form will auto-populate with alert details.</p>
+      </html>
+    </panel>
+  </row>
+  
+  <row>
+    <panel>
+      <title>Select Notable Alert</title>
+      <input type="dropdown" token="selected_alert_id" searchWhenChanged="true">
+        <label>Select Alert to Create Incident</label>
+        <search>
+          <query>
+index=notable earliest=-24h latest=now
+| dedup alert_id, src_entity
+| eval display_label=alert_id . " - " . alert_name . " (" . src_entity . ") - " . strftime(_time, "%Y-%m-%d %H:%M")
+| table alert_id, alert_name, severity, src_entity, mitre_technique_id, mitre_tactic, data_source, additional_context, display_label, _time
+| sort - _time
+          </query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <fieldForLabel>display_label</fieldForLabel>
+        <fieldForValue>alert_id</fieldForValue>
+        <default></default>
+      </input>
+    </panel>
+  </row>
+  
+  <row depends="$selected_alert_id$">
+    <panel>
+      <title>Alert Details</title>
+      <table>
+        <search>
+          <query>
+index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
+| head 1
+| eval created_time=strftime(_time, "%Y-%m-%d %H:%M:%S")
+| table alert_id, alert_name, severity, src_entity, process_info, target_info, mitre_technique_id, mitre_tactic, data_source, additional_context, created_time
+| rename alert_id as "Alert ID", alert_name as "Alert Name", severity as "Severity", src_entity as "Source Entity", process_info as "Process Info", target_info as "Target Info", mitre_technique_id as "MITRE Technique", mitre_tactic as "MITRE Tactic", data_source as "Data Source", additional_context as "Context", created_time as "Alert Time"
+          </query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  
+  <row depends="$selected_alert_id$">
+    <panel>
+      <title>Incident Creation Form</title>
+      <input type="text" token="incident_description">
+        <label>Incident Description</label>
+        <default>Investigate alert: $selected_alert_id$</default>
+      </input>
+      
+      <input type="dropdown" token="incident_assigned_to">
+        <label>Assign To</label>
+        <search>
+          <query>
+| inputlookup soc_users.csv
+| where status="active"
+| table username, full_name
+| eval display_name=full_name . " (" . username . ")"
+          </query>
+        </search>
+        <fieldForLabel>display_name</fieldForLabel>
+        <fieldForValue>username</fieldForValue>
+        <default>unassigned</default>
+      </input>
+      
+      <input type="text" token="incident_notes">
+        <label>Initial Notes (Optional)</label>
+        <default></default>
+      </input>
+      
+      <html>
+        <div style="margin-top: 20px;">
+          <button class="btn btn-primary" id="create_incident_btn">Create Incident</button>
+        </div>
+        
+        
+      </html>
+    </panel>
+  </row>
+<!-- Row: Update Existing Incident -->
+  <row>
+    <panel>
+      <title>Update Existing Incident</title>
+      <html>
+        <p><strong>Instructions:</strong> Enter the Incident ID, select new status and assignment, then click Update.</p>
+      </html>
+    </panel>
+  </row>
+  
+  <row>
+    <panel>
+      <title>Select Incident to Update</title>
+      <input type="dropdown" token="update_incident_id" searchWhenChanged="true">
+        <label>Select Incident to Update</label>
+        <search>
+          <query>
+| inputlookup security_incidents
+| eval display_label=incident_id . " - " . alert_name . " (Status: " . status . ", Assigned: " . assigned_to . ")"
+| table incident_id, display_label, status, assigned_to, alert_name
+| sort - incident_id
+          </query>
+        </search>
+        <fieldForLabel>display_label</fieldForLabel>
+        <fieldForValue>incident_id</fieldForValue>
+        <default></default>
+      </input>
+    </panel>
+  </row>
+  
+  <row depends="$update_incident_id$">
+    <panel>
+      <title>Current Incident Details</title>
+      <table>
+        <search>
+          <query>
+| inputlookup security_incidents
+| search incident_id="$update_incident_id$"
+| eval created_time=strftime(created_time, "%Y-%m-%d %H:%M:%S")
+| eval updated_time=strftime(updated_time, "%Y-%m-%d %H:%M:%S")
+| table incident_id, alert_name, status, assigned_to, severity, created_time, updated_time, description
+| rename incident_id as "Incident ID", alert_name as "Alert Name", status as "Current Status", assigned_to as "Currently Assigned To", severity as "Severity", created_time as "Created", updated_time as "Last Updated", description as "Description"
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  
+  <row depends="$update_incident_id$">
+    <panel>
+      <title>Update Incident Form</title>
+      
+      <input type="dropdown" token="new_status">
+        <label>New Status</label>
+        <choice value="open">Open</choice>
+        <choice value="investigating">Investigating</choice>
+        <choice value="closed">Closed</choice>
+        <default>investigating</default>
+      </input>
+      
+      <input type="dropdown" token="new_assigned_to">
+        <label>Assign To</label>
+        <search>
+          <query>
+| inputlookup soc_users.csv
+| where status="active"
+| table username, full_name
+| eval display_name=full_name . " (" . username . ")"
+          </query>
+        </search>
+        <fieldForLabel>display_name</fieldForLabel>
+        <fieldForValue>username</fieldForValue>
+        <default>unassigned</default>
+      </input>
+      
+      <html>
+        <div style="margin-top: 20px;">
+          <button class="btn btn-warning" id="update_incident_btn">Update Incident</button>
+        </div>
+      </html>
+    </panel>
+  </row>
+
+<row>
+    <panel>
+      <title>Delete Existing Incident</title>
+      <html>
+        <p>⚠️ <strong>Warning:</strong> Select an Incident ID below and click Delete. This action is **irreversible**.</p>
+      </html>
+    </panel>
+</row>
+
+<row>
+    <panel>
+      <title>Select Incident to Delete</title>
+      <input type="dropdown" token="delete_incident_id" searchWhenChanged="true">
+        <label>Select Incident to Permanently Delete</label>
+        <search>
+          <query>
+| inputlookup security_incidents
+| eval display_label=incident_id . " - " . alert_name . " (Status: " . status . ", Assigned: " . assigned_to . ")"
+| table incident_id, display_label, status, assigned_to, alert_name
+| sort - incident_id
+          </query>
+        </search>
+        <fieldForLabel>display_label</fieldForLabel>
+        <fieldForValue>incident_id</fieldForValue>
+        <default></default>
+      </input>
+    </panel>
+</row>
+
+<row depends="$delete_incident_id$">
+    <panel>
+      <title>Confirm Delete</title>
+      <html>
+        <div style="margin-top: 20px;">
+          <button class="btn btn-danger" id="delete_incident_btn">Permanently Delete Incident $delete_incident_id$</button>
+        </div>
+      </html>
+    </panel>
+</row>
+
+
+</form>
