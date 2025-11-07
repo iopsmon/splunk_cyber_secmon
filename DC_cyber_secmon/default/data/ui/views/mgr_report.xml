@@ -1,8 +1,13 @@
 <form version="1.1" theme="dark">
   <label>SOC Manager Overview</label>
   <description>Executive dashboard for SOC operations and incident management KPIs</description>
-  
   <!-- Time Range Selector -->
+  <!-- Row 1: Key Performance Indicators -->
+  <!-- Row 2: Incident Trends -->
+  <!-- Row 3: Status and Severity Breakdown -->
+  <!-- Row 4: Team Performance -->
+  <!-- Row 5: Alert Sources and Top Incidents -->
+  <!-- Row 6: SLA Compliance -->
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time_range">
       <label>Time Range</label>
@@ -12,229 +17,217 @@
       </default>
     </input>
   </fieldset>
-  
-  <!-- Row 1: Key Performance Indicators -->
   <row>
     <panel>
       <title>Total Incidents</title>
       <single>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | eval created_epoch=created_time
-| where created_epoch >= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
-| stats count
-          </query>
+| where created_epoch &gt;= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
+| stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="drilldown">none</option>
         <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
         <option name="rangeColors">["0x65A637","0xF7BC38","0xF58F39","0xD93F3C"]</option>
         <option name="rangeValues">[0,20,50]</option>
-        <option name="useColors">1</option>
+        <option name="refresh.display">progressbar</option>
         <option name="underLabel">Incidents Created</option>
+        <option name="useColors">1</option>
       </single>
     </panel>
-    
     <panel>
       <title>Open Incidents</title>
       <single>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | where status="open"
-| stats count
-          </query>
+| stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="drilldown">none</option>
         <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
         <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
         <option name="rangeValues">[0,5]</option>
-        <option name="useColors">1</option>
+        <option name="refresh.display">progressbar</option>
         <option name="underLabel">Require Attention</option>
+        <option name="useColors">1</option>
       </single>
     </panel>
-    
     <panel>
       <title>Critical/High Priority</title>
       <single>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | where status!="closed" AND (severity="critical" OR severity="high")
-| stats count
-          </query>
+| stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="drilldown">none</option>
         <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
         <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
         <option name="rangeValues">[0,3]</option>
-        <option name="useColors">1</option>
+        <option name="refresh.display">progressbar</option>
         <option name="underLabel">Active High Severity</option>
+        <option name="useColors">1</option>
       </single>
     </panel>
-    
     <panel>
       <title>Mean Time to Assign</title>
       <single>
         <search>
-          <query>
-| inputlookup security_incidents
-| eval created_epoch=created_time
-| where created_epoch >= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
-| where assigned_to!="unassigned"
-| eval time_to_assign=updated_time-created_time
-| stats avg(time_to_assign) as avg_assign
-| eval avg_assign_hours=round(avg_assign/3600, 1)
-| fields avg_assign_hours
-          </query>
+          <query>| inputlookup security_incidents 
+| where created_time &gt;= relative_time(now(), "-7d@d") 
+| where assigned_to!="unassigned" 
+| eval time_to_assign=updated_time-created_time 
+| stats avg(time_to_assign) as avg_assign 
+| eval avg_assign_hours=round(avg_assign/3600, 1) 
+| fields avg_assign_hours</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="drilldown">none</option>
         <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
         <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
         <option name="rangeValues">[0,2]</option>
-        <option name="useColors">1</option>
+        <option name="refresh.display">progressbar</option>
         <option name="underLabel">Hours</option>
-        <option name="numberPrecision">0.1</option>
+        <option name="useColors">1</option>
       </single>
     </panel>
-    
     <panel>
       <title>Mean Time to Close</title>
       <single>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | where status="closed"
-| eval created_epoch=created_time
-| where created_epoch >= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
-| eval time_to_close=(updated_time-created_time)/3600
-| stats avg(time_to_close) as avg_close_hours
-| eval avg_close_hours=round(avg_close_hours, 1)
-| fields avg_close_hours
-          </query>
+| eval time_to_close_seconds=updated_time - created_time
+| stats avg(time_to_close_seconds) as avg_close_seconds
+| eval avg_close_hours=round(avg_close_seconds / 3600, 1)
+| fields avg_close_hours</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="drilldown">none</option>
         <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
         <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
         <option name="rangeValues">[0,24]</option>
-        <option name="useColors">1</option>
+        <option name="refresh.display">progressbar</option>
         <option name="underLabel">Hours</option>
-        <option name="numberPrecision">0.1</option>
+        <option name="useColors">1</option>
       </single>
     </panel>
   </row>
-  
-  <!-- Row 2: Incident Trends -->
   <row>
     <panel>
       <title>Incident Trend (Daily)</title>
       <chart>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | eval created_epoch=created_time
-| where created_epoch >= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
 | eval day=strftime(created_time, "%Y-%m-%d")
 | stats count by day, severity
-| xyseries day severity count
-          </query>
+| xyseries day severity count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="charting.chart">column</option>
-        <option name="charting.chart.stackMode">stacked</option>
         <option name="charting.axisTitleX.text">Date</option>
         <option name="charting.axisTitleY.text">Incident Count</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.seriesColors">[0xD93F3C,0xF58F39,0xF7BC38,0x65A637]</option>
+        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
-    
     <panel>
       <title>Resolution Rate</title>
       <chart>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | eval created_epoch=created_time
-| where created_epoch >= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
+
 | eval day=strftime(created_time, "%Y-%m-%d")
 | stats count(eval(status="closed")) as closed, count as total by day
 | eval resolution_rate=round((closed/total)*100, 1)
-| table day, resolution_rate
-          </query>
+| table day, resolution_rate</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="charting.chart">line</option>
         <option name="charting.axisTitleX.text">Date</option>
         <option name="charting.axisTitleY.text">Resolution Rate (%)</option>
+        <option name="charting.chart">line</option>
         <option name="charting.chart.showDataLabels">all</option>
         <option name="charting.seriesColors">[0x1e88e5]</option>
+        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
   </row>
-  
-  <!-- Row 3: Status and Severity Breakdown -->
   <row>
     <panel>
       <title>Current Incident Status</title>
       <chart>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | stats count by status
-| sort - count
-          </query>
+| sort - count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
         <option name="charting.chart">pie</option>
         <option name="charting.seriesColors">[0xD93F3C,0xF7BC38,0x65A637]</option>
+        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
-    
     <panel>
       <title>Incidents by Severity (Last 7 Days)</title>
       <chart>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | eval created_epoch=created_time
-| where created_epoch >= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
+
 | stats count by severity
-| sort - count
-          </query>
+| sort - count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="charting.chart">bar</option>
         <option name="charting.axisTitleX.text">Count</option>
         <option name="charting.axisTitleY.text">Severity</option>
+        <option name="charting.chart">bar</option>
         <option name="charting.seriesColors">[0xD93F3C,0xF58F39,0xF7BC38,0x65A637]</option>
+        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
-    
     <panel>
       <title>MITRE ATTACK Coverage</title>
       <chart>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | eval created_epoch=created_time
-| where created_epoch &gt;= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
+
 | stats count by mitre_tactic
 | sort - count
-| head 10
-          </query>
+| head 10</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="charting.chart">bar</option>
         <option name="charting.axisTitleX.text">Count</option>
         <option name="charting.axisTitleY.text">MITRE Tactic</option>
+        <option name="charting.chart">bar</option>
+        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
   </row>
-  
-  <!-- Row 4: Team Performance -->
   <row>
     <panel>
       <title>Analyst Workload Distribution</title>
       <table>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | where assigned_to!="unassigned"
 | stats 
     count as total_assigned,
@@ -245,11 +238,13 @@
     by assigned_to
 | eval workload_score=open*3 + investigating*2 + high_priority*2
 | sort - workload_score
-| rename assigned_to as "Analyst", total_assigned as "Total Assigned", open as "Open", investigating as "Investigating", closed as "Closed", high_priority as "High Priority", workload_score as "Workload Score"
-          </query>
+| rename assigned_to as "Analyst", total_assigned as "Total Assigned", open as "Open", investigating as "Investigating", closed as "Closed", high_priority as "High Priority", workload_score as "Workload Score"</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="drilldown">none</option>
         <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
         <format type="color" field="Workload Score">
           <colorPalette type="minMidMax" maxColor="#D93F3C" midColor="#F7BC38" minColor="#65A637"></colorPalette>
           <scale type="minMidMax" midType="percentile" midValue="50"></scale>
@@ -257,45 +252,44 @@
       </table>
     </panel>
   </row>
-  
-  <!-- Row 5: Alert Sources and Top Incidents -->
   <row>
     <panel>
       <title>Top Alert Types</title>
       <table>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | eval created_epoch=created_time
-| where created_epoch &gt;= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
+
 | stats count by alert_id, alert_name
 | sort - count
 | head 10
-| rename alert_id as "Alert ID", alert_name as "Alert Name", count as "Count"
-          </query>
+| rename alert_id as "Alert ID", alert_name as "Alert Name", count as "Count"</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="drilldown">none</option>
         <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
       </table>
     </panel>
-    
     <panel>
       <title>Critical Incidents Requiring Attention</title>
       <table>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | where status!="closed" AND (severity="critical" OR severity="high")
 | eval created_time_fmt=strftime(created_time, "%Y-%m-%d %H:%M")
 | eval age_hours=round((now()-created_time)/3600, 1)
 | sort - severity, age_hours
 | head 10
 | table incident_id, alert_name, severity, status, assigned_to, age_hours, created_time_fmt
-| rename incident_id as "Incident ID", alert_name as "Alert", severity as "Severity", status as "Status", assigned_to as "Assigned To", age_hours as "Age (Hours)", created_time_fmt as "Created"
-          </query>
+| rename incident_id as "Incident ID", alert_name as "Alert", severity as "Severity", status as "Status", assigned_to as "Assigned To", age_hours as "Age (Hours)", created_time_fmt as "Created"</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
-        <option name="drilldown">none</option>
         <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
         <option name="wrap">true</option>
         <format type="color" field="Severity">
           <colorPalette type="map">{"critical":#D93F3C,"high":#F58F39}</colorPalette>
@@ -307,37 +301,34 @@
       </table>
     </panel>
   </row>
-  
-  <!-- Row 6: SLA Compliance -->
   <row>
     <panel>
       <title>SLA Compliance - Assignment Time</title>
       <chart>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | eval created_epoch=created_time
-| where created_epoch &lt;= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
+
 | where assigned_to!="unassigned"
 | eval time_to_assign_hours=(updated_time-created_time)/3600
 | eval sla_met=if(time_to_assign_hours &lt;= 1, "Met SLA (&lt;1h)", "Missed SLA (&gt;1h)")
-| stats count by sla_met
-          </query>
+| stats count by sla_met</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
         <option name="charting.chart">pie</option>
         <option name="charting.seriesColors">[0x65A637,0xD93F3C]</option>
+        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
-    
     <panel>
       <title>SLA Compliance - Resolution Time</title>
       <chart>
         <search>
-          <query>
-| inputlookup security_incidents
+          <query>| inputlookup security_incidents
 | where status="closed"
 | eval created_epoch=created_time
-| where created_epoch &gt;= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
+
 | eval time_to_close_hours=(updated_time-created_time)/3600
 | eval sla_met=case(
     severity="critical" AND time_to_close_hours &lt;= 4, "Met SLA",
@@ -346,13 +337,14 @@
     severity="low" AND time_to_close_hours &lt;= 72, "Met SLA",
     1=1, "Missed SLA"
 )
-| stats count by sla_met
-          </query>
+| stats count by sla_met</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
         </search>
         <option name="charting.chart">pie</option>
         <option name="charting.seriesColors">[0x65A637,0xD93F3C]</option>
+        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
   </row>
-  
 </form>

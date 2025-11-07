@@ -1,0 +1,321 @@
+<form version="1.1" theme="dark">
+  <label>Hosts Not Reporting</label>
+  <description>Monitor expected assets that have stopped reporting events to Splunk</description>
+  <!-- Filters -->
+  <!-- Row 1: Summary Statistics -->
+  <!-- Row 2: Hosts Not Reporting Details -->
+  <!-- Row 3: Breakdown Charts -->
+  <!-- Row 4: All Assets Status -->
+  <!-- Row 5: Reporting Trend -->
+  <fieldset submitButton="true" autoRun="true">
+    <input type="time" token="time_range">
+      <label>Expected Reporting Window</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="priority_filter">
+      <label>Priority</label>
+      <choice value="*">All Priorities</choice>
+      <choice value="critical">Critical</choice>
+      <choice value="high">High</choice>
+      <choice value="medium">Medium</choice>
+      <choice value="low">Low</choice>
+      <default>*</default>
+    </input>
+    <input type="dropdown" token="category_filter">
+      <label>Category</label>
+      <choice value="*">All Categories</choice>
+      <choice value="server">Servers</choice>
+      <choice value="workstation">Workstations</choice>
+      <choice value="network">Network Devices</choice>
+      <choice value="laptop">Laptops</choice>
+      <default>*</default>
+    </input>
+    <input type="dropdown" token="show_maintenance">
+      <label>Show Assets in Maintenance</label>
+      <choice value="exclude">Exclude (Recommended)</choice>
+      <choice value="include">Include</choice>
+      <default>exclude</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Total Expected Assets</title>
+      <single>
+        <search>
+          <query>| inputlookup iops_assets 
+| where is_expected=("true")
+| search priority="$priority_filter$" category="$category_filter$"
+| stats count</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="underLabel">Should Be Reporting</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Hosts Not Reporting</title>
+      <single>
+        <search>
+          <query>| inputlookup iops_assets | where is_expected=("true")
+| search priority="$priority_filter$" category="$category_filter$"
+| eval maintenance_active=if(maintenance_window!="None" AND maintenance_window!="" AND "$show_maintenance$"="exclude", 1, 0)
+| join type=left asset [
+    | tstats latest(_time) as last_seen WHERE index=* BY host
+    | rename host as asset
+]
+| where isnull(last_seen) AND maintenance_active=0
+| stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
+        <option name="rangeValues">[0,3]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="underLabel">Missing Events</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Critical Not Reporting</title>
+      <single>
+        <search>
+          <query>| inputlookup iops_assets 
+| where is_expected=("true") AND priority="critical"
+| eval maintenance_active=if(maintenance_window!="None" AND maintenance_window!="" AND "$show_maintenance$"="exclude", 1, 0)
+| join type=left asset [
+    | tstats latest(_time) as last_seen WHERE index=* BY host
+    | rename host as asset
+]
+| where isnull(last_seen) AND maintenance_active=0
+| stats count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x65A637","0xD93F3C"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="underLabel">Urgent Attention Required</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Reporting Percentage</title>
+      <single>
+        <search>
+          <query>| inputlookup iops_assets 
+| where is_expected=("true")
+| search priority="$priority_filter$" category="$category_filter$"
+| eval maintenance_active=if(maintenance_window!="None" AND maintenance_window!="" AND "$show_maintenance$"="exclude", 1, 0)
+| join type=left asset [
+    | tstats latest(_time) as last_seen WHERE index=* BY host
+    | rename host as asset
+]
+| eval is_reporting=if(isnotnull(last_seen), 1, 0)
+| eval excluded=if(maintenance_active=1, 1, 0)
+| stats sum(is_reporting) as reporting, count(eval(maintenance_active=0)) as total
+| eval percentage=round((reporting/total)*100, 1)
+| fields percentage</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0xD93F3C","0xF7BC38","0x65A637"]</option>
+        <option name="rangeValues">[90,95]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="underLabel">% Healthy</option>
+        <option name="unit">%</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Hosts Not Reporting - Detailed View</title>
+      <table>
+        <search>
+          <query>| inputlookup iops_assets 
+| where is_expected=("true")
+| search priority="$priority_filter$" category="$category_filter$"
+| eval maintenance_active=if(maintenance_window!="None" AND maintenance_window!="" AND "$show_maintenance$"="exclude", 1, 0)
+| join type=left asset [
+    | tstats latest(_time) as last_seen WHERE index=* BY host
+    | rename host as asset
+]
+| where isnull(last_seen) AND maintenance_active=0
+| eval days_missing=round((now()-relative_time(now(), "$time_range.earliest$"))/86400, 1)
+| sort - priority, asset
+| table asset, ip, dns, owner, category, priority, os, location, bunit, maintenance_window, notes
+| rename asset as "Asset", ip as "IP Address", dns as "DNS Name", owner as "Owner", category as "Category", priority as "Priority", os as "Operating System", location as "Location", bunit as "Business Unit", maintenance_window as "Maintenance Window", notes as "Notes"</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="count">20</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Priority">
+          <colorPalette type="map">{"critical":#D93F3C,"high":#F58F39,"medium":#F7BC38,"low":#65A637}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Not Reporting by Priority</title>
+      <chart>
+        <search>
+          <query>| inputlookup iops_assets 
+| where is_expected=("true")
+| search priority="$priority_filter$" category="$category_filter$"
+| eval maintenance_active=if(maintenance_window!="None" AND maintenance_window!="" AND "exclude"="exclude", 1, 0)
+| join type=left asset [
+    | tstats latest(_time) as last_seen WHERE index=* BY host
+    | rename host as asset]
+| where isnull(last_seen) AND maintenance_active=0
+| stats count by priority
+| sort - count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Count</option>
+        <option name="charting.axisTitleY.text">Priority</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.seriesColors">[0xD93F3C,0xF58F39,0xF7BC38,0x65A637]</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Not Reporting by Category</title>
+      <chart>
+        <search>
+          <query>| inputlookup iops_assets 
+| where is_expected="true"
+| search priority="$priority_filter$" category="$category_filter$"
+| eval maintenance_active=if(maintenance_window!="None" AND maintenance_window!="" AND "$show_maintenance$"="exclude", 1, 0)
+| join type=left asset [
+    | tstats latest(_time) as last_seen WHERE index=* BY host
+    | rename host as asset
+]
+| where isnull(last_seen) AND maintenance_active=0
+| stats count by category
+| sort - count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Not Reporting by Business Unit</title>
+      <chart>
+        <search>
+          <query>| inputlookup iops_assets 
+| where is_expected="true"
+| search priority="$priority_filter$" category="$category_filter$"
+| eval maintenance_active=if(maintenance_window!="None" AND maintenance_window!="" AND "$show_maintenance$"="exclude", 1, 0)
+| join type=left asset [
+    | tstats latest(_time) as last_seen WHERE index=* BY host
+    | rename host as asset
+]
+| where isnull(last_seen) AND maintenance_active=0
+| stats count by bunit
+| sort - count</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Count</option>
+        <option name="charting.axisTitleY.text">Business Unit</option>
+        <option name="charting.chart">bar</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>All Expected Assets - Reporting Status</title>
+      <table>
+        <search>
+          <query>| inputlookup iops_assets 
+
+| where is_expected="true"
+| search priority="$priority_filter$" category="$category_filter$"
+| eval maintenance_active=if(maintenance_window!="None" AND maintenance_window!="" AND "$show_maintenance$"="exclude", 1, 0)
+| join type=left asset [
+    | tstats count AS event_count, latest(_time) as last_seen,  WHERE index=* BY host
+    | rename host as asset
+]
+| eval status=case(
+    maintenance_active=1, "In Maintenance",
+    isnotnull(last_seen), "Reporting",
+    1=1, "NOT REPORTING"
+)
+
+
+| eval last_seen_fmt=if(isnotnull(last_seen), strftime(last_seen, "%Y-%m-%d %H:%M:%S"), "Never")
+| eval hours_since=if(isnotnull(last_seen), round((now()-last_seen)/3600, 1), "N/A")
+| sort - priority, status, asset
+| table asset, status, last_seen_fmt, hours_since, event_count, priority, category, owner, location, maintenance_window
+| rename asset as "Asset", status as "Status", last_seen_fmt as "Last Seen", hours_since as "Hours Since", event_count as "Event Count", priority as "Priority", category as "Category", owner as "Owner", location as "Location", maintenance_window as "Maintenance Window"</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="count">20</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Status">
+          <colorPalette type="map">{"Reporting":#65A637,"NOT REPORTING":#D93F3C,"In Maintenance":#FFB300}</colorPalette>
+        </format>
+        <format type="color" field="Priority">
+          <colorPalette type="map">{"critical":#D93F3C,"high":#F58F39,"medium":#F7BC38,"low":#65A637}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Asset Reporting Health Over Time (Last 7 Days)</title>
+      <table>
+        <search>
+          <query>| tstats count WHERE index=* BY host, _time span=1day
+| rename host AS asset
+| eval day=strftime(_time, "%Y-%m-%d")
+| stats count AS reporting_count BY asset,day
+| join type=inner asset [
+    | inputlookup iops_assets
+    | where is_expected="true"
+     | search priority="$priority_filter$" category="$category_filter$"
+
+    | fields asset
+]
+| appendcols [
+    | inputlookup iops_assets 
+    | where is_expected="true"
+     | search priority="$priority_filter$" category="$category_filter$"
+    | stats count AS expected_total 
+    | fields expected_total
+]
+| eval percentage=round((reporting_count/expected_total)*100, 1)
+| table day, percentage</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>

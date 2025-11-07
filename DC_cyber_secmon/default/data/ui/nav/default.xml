@@ -18,6 +18,7 @@
 <collection label="Help">
 	<view name="cyber_app_info"/>
 	<view name="sec_app_analytics"/>
+	<view name="hosts_report"/>
 	</collection>
 
 <collection label="Search">

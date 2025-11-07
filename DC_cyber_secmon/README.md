@@ -17,7 +17,16 @@ This application serves as a **detection engineering platform** that:
 
 **Note:** This app is not intended to replace comprehensive tools like Splunk Enterprise Security (ES), but rather complements them by providing a dedicated environment for detection content development.
 
-![dashboard_alert image](static/secmon_dashboard.jpg)
+---
+## App Version History
+
+| Version | Date | Changes | Author |
+|---------|------|---------|--------|
+| 1.0.0 | Oct 2025| Initial release | Security Team |
+| 1.1.0 | Oct 2025 | Added Various Security Dashboards - Bug Fixes | Security Team |
+| 1.2.0 | Oct 2025 | Added New Dashboards  - Lookups | Security Team |
+| 1.3.0 | Nov 2025 | Documentation Updates, Incidents Dashboards, Nav Layout, New Lookups | Security Team |
+
 
 ---
 
@@ -540,6 +549,16 @@ This is a custom application developed for internal use. For questions, suggesti
 - Attack data ingestion workflow
 - Custom replay script for automated data ingestion
 
+### v1.1.0 -1.3.0 
+- Incident dashboard with multi-panel visualization
+- Documentation Updates 
+- SPL Bug Fixes
+- Analytics Dashboard Added
+- Lookups Dashboard Added 
+- SOC Management Reports Dashboard
+- Dashboard Tuning
+
+
 ---
 
 ## License
@@ -548,6 +567,6 @@ This application is for internal use only. Attack data sourced from the Splunk A
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** October 2024  
+**Document Version:** 1.1
+**Last Updated:** November 2025  
 **Author:** Security Engineering Team

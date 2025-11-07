@@ -19,7 +19,7 @@ Add alert metadata to `iops_security_alerts_summary.csv` for dashboard normaliza
 alert_id,alert_name,severity,mitre_technique_id,mitre_technique_name,mitre_tactic,data_source
 ```
 
-Verify lookups are accessible:
+Verify lookups  accessible:
 ```spl
 Contains key security alerts
 | inputlookup iops_security_alerts_summary
@@ -32,6 +32,9 @@ Contains Key Windows Allowed Process
 
 Contains Key Mitre Attack Techniques
 | inputlookup iops_mitre_id
+
+Contains Assets
+| inputlookup iops_assets
 ```
 
 ### Step 3: Detection Development
@@ -39,6 +42,8 @@ Contains Key Mitre Attack Techniques
 2. Map fields to normalized schema (src_entity, process_info, target_info, additional_context)
 3. Validate MITRE ATT&CK mapping
 4. Test with sample data and tune thresholds
+5. Approve Use Case
+6. Deploy to Production
 
 ### Step 4: Alert Deployment
 1. Save search as alert in `DC_cyber_secmon` app
@@ -52,6 +57,8 @@ Contains Key Mitre Attack Techniques
 ## Active Use Cases
 
 ### Summary Table
+- Use this to check which alerts (Use Cases) have been developed 
+- These have been deveoped but are examples and develop SPL skills
 
 | Alert ID | Alert Name | Category | Severity | MITRE Technique | Status | Last Updated |
 |----------|------------|----------|----------|-----------------|--------|--------------|
@@ -59,8 +66,11 @@ Contains Key Mitre Attack Techniques
 | END_ALT-002 | Blocked Process Execution Detected| Endpoint | High| T1059 | Active | Oct 2025 |
 | END_ALT-003 | User account has Logged in as root Endpoint | High| T1548.003 | Active | Oct 2025 |
 | IAM_ALT-001 | Multiple Failed Logons | Identity & Access | Medium | T1110 | Active | Oct 2025 |
+| NET_ALT-001 | Exfiltration Over Web Service | Web Service| High | T1567 | Active | Oct 2025 |
 
 ---
+
+### DETAILS FOR EACH USE CASES
 
 ## ENDPOINT USE CASES
 
@@ -261,6 +271,8 @@ earliest=0
 | collect index=notable
 
 ```
+
+
 
 #### Alert Configuration (`savedsearches.conf`)
 ```ini
@@ -668,6 +680,182 @@ command=UserLoginFailed
 | eval alert_name="Distributed Brute Force - Multiple Source IPs"
 ```
 
+
+
+## NETWORK  USE CASES
+
+### NET_ALT-001: Exfiltration Over Web Service
+
+#### Overview
+**Status:** ✅ Active  
+**Category:** Network  (NET)  
+**MITRE ATT&CK:** T1567  Data Exfil   
+**Tactic:** Exfiltration Over Web Service
+**Severity:** High 
+**Data Source:**   Nginx Access Logs
+
+#### Description
+This detects data that is being copied to an external web service - the logs are based on the Nginx Access Logs. The rule provides any data going over 100MB threshold will be trigged. 
+
+#### Attack Data Ingestion
+```bash
+# Pull the dataset from Splunk Attack Data repository
+git lfs pull --include="datasets/attack_techniques/T1567/web_upload_nginx/web_upload_nginx.yml"
+git lfs pull --include="datasets/attack_techniques/T1567/web_upload_nginx/web_upload_nginx.log"
+
+##Push  Data This pushes data as json to HEC 
+
+python3 bin/replay.py datasets/attack_techniques/T1567/web_upload_nginx/web_upload_nginx.log
+
+
+# Ingest via manual upload or replay script
+# Target index: attack_data
+# index=attack_data 
+# sourcetype="nginx:plus:access
+```
+
+#### Detection Logic (SPL)
+```spl
+index=attack_data 
+sourcetype="nginx:plus:access" 
+bytes_out=* 
+```the time is so we can get test alerts normally set for 1 hour etc```
+earliest=-24h latest=now
+| eval GB_bytes_out=round(bytes_out/1024/1024/1024, 2)
+```this is to ensure any thing is over 100GB and a POST of data - meaning copied  - you can adjust for testing```
+| where (GB_bytes_out >= 0.1 AND http_method="POST")
+| bucket _time span=5m
+```Main aggregation```
+| stats 
+    sum(GB_bytes_out) as total_gb_transferred,
+    count as request_count,
+    dc(uri_path) as unique_paths,
+    dc(dest_ip) as unique_destinations,
+    values(uri_path) as paths,
+    values(http_user_agent) as user_agents,
+    values(status) as http_statuses,
+    min(_time) as first_seen,
+    max(_time) as last_seen
+    max(time_local) as raw_local_time
+    by src, src_ip, dest_ip, http_method
+```If the threshold is over 0.1 100GB ```
+| where total_gb_transferred >= 0.1
+| eval alert_name="Exfiltration Over Web Service"
+| eval suspicious_reason="Large data upload detected: " . round(total_gb_transferred, 2) . " GB transferred via POST in " . request_count . " requests to " . unique_destinations . " destination(s)"
+| eval event_time = strftime(strptime(raw_local_time, "%d/%b/%Y:%H:%M:%S %z"), "%Y-%m-%d %H:%M:%S")
+| eval alert_time=strftime(first_seen, "%Y-%m-%d %H:%M:%S")
+| eval duration_minutes=round((last_seen - first_seen) / 60, 2)
+```Lookup alert name and get fields  ```
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity
+```Normalise fields for incident and reporting dashboards```
+| eval src_entity=coalesce(src, src_ip, "Unknown")
+| eval process_info="HTTP POST: " . http_method
+| eval target_info=dest_ip 
+| eval additional_context=suspicious_reason . " | Duration: " . duration_minutes . " mins | Paths: " . paths . " | User-Agents: " . user_agents . " | HTTP Status: " . http_statuses
+| table alert_time, event_time, alert_id, alert_name, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source, total_gb_transferred, request_count, unique_destinations, duration_minutes
+| sort - total_gb_transferred
+| collect index=notable
+```
+
+#### Alert Configuration (`savedsearches.conf`)
+```ini
+[NET_ALT-001]
+action.webhook.enable_allowlist = 0
+alert.expires = 1h
+alert.suppress = 1
+alert.suppress.period = 60s
+alert.track = 1
+counttype = number of events
+cron_schedule = */10 * * * *
+description = Exfiltration Over Web Service
+dispatch.earliest_time = -24h@h
+dispatch.latest_time = now
+display.events.fields = ["host","source","sourcetype","sudo_user","dvc","COMMAND","USER","process","user_name","original_user","uri_path","uri_query","web_method","url","vocab_only","type","msg","general_name","site"]
+display.events.maxLines = 20
+display.general.type = statistics
+display.page.search.mode = verbose
+display.page.search.tab = statistics
+enableSched = 1
+quantity = 0
+relation = greater than
+request.ui_dispatch_app = DC_cyber_secmon
+request.ui_dispatch_view = search
+search = index=attack_data \
+sourcetype="nginx:plus:access" \
+bytes_out=* \
+```the time is so we can get test alerts normally set for 1 hour etc```\
+earliest=-24h latest=now\
+| eval GB_bytes_out=round(bytes_out/1024/1024/1024, 2)\
+```this is to ensure any thing is over 100GB and a POST of data - meaning copied  - you can adjust for testing```\
+| where (GB_bytes_out >= 0.1 AND http_method="POST")\
+| bucket _time span=5m\
+```Main aggregation```\
+| stats \
+    sum(GB_bytes_out) as total_gb_transferred,\
+    count as request_count,\
+    dc(uri_path) as unique_paths,\
+    dc(dest_ip) as unique_destinations,\
+    values(uri_path) as paths,\
+    values(http_user_agent) as user_agents,\
+    values(status) as http_statuses,\
+    min(_time) as first_seen,\
+    max(_time) as last_seen\
+    max(time_local) as raw_local_time\
+    by src, src_ip, dest_ip, http_method\
+```If the threshold is over 0.1 100GB ```\
+| where total_gb_transferred >= 0.1\
+| eval alert_name="Exfiltration Over Web Service"\
+| eval suspicious_reason="Large data upload detected: " . round(total_gb_transferred, 2) . " GB transferred via POST in " . request_count . " requests to " . unique_destinations . " destination(s)"\
+| eval event_time = strftime(strptime(raw_local_time, "%d/%b/%Y:%H:%M:%S %z"), "%Y-%m-%d %H:%M:%S")\
+| eval alert_time=strftime(first_seen, "%Y-%m-%d %H:%M:%S")\
+| eval duration_minutes=round((last_seen - first_seen) / 60, 2)\
+```Lookup alert name and get fields  ```\
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity\
+```Normalise fields for incident and reporting dashboards```\
+| eval src_entity=coalesce(src, src_ip, "Unknown")\
+| eval process_info="HTTP POST: " . http_method\
+| eval target_info=dest_ip \
+| eval additional_context=suspicious_reason . " | Duration: " . duration_minutes . " mins | Paths: " . paths . " | User-Agents: " . user_agents . " | HTTP Status: " . http_statuses\
+| table alert_time, event_time, alert_id, alert_name, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source, total_gb_transferred, request_count, unique_destinations, duration_minutes\
+| sort - total_gb_transferred\
+| collect index=notable
+
+
+```
+
+#### Key Fields
+- **bytes_out:** Size Of Data
+- **src_ip:** Source of IP (IP of where the data is being sent to)
+- **http_method:** HTTP method showing POST - meaning sending data
+- **dest_ip:** This is the IP of the machine where the data is being copied from
+
+
+#### Detection Tuning
+- **Current Threshold:** GB_bytes_out >= 0.1 AND http_method="POST"
+- **False Positives:** Check for Legitimate external systems - add lookup if required
+- **Tuning Recommendations:**
+  - Whitelist known-good IP destinations: `dest_ip NOT IN ("192.168.1.1)`
+  - Check size of volume of data  `GB_bytes_out >= 0.1  this is 100GB can go lower if need be`
+
+
+#### Testing Notes
+- ✅ Verified detection fires on sample attack data
+- ✅ Alert successfully writes to `notable` index
+- ✅ Dashboard visualization confirmed
+- ⚠️ Schedule set to `*/5 * * * *` (every 5 minutes) - monitor for concurrency issues
+- ⚠️ Search period set to `earliest=0` (all time) - change to `-5m` or `-10m` in production
+
+#### Response Guidance
+1. **Investigate the src_ip:** Check if src_ip is legitimate or suspicious
+2. **Investiage what user:** Identify what user logged on to the dest_ip target
+2. **Investiage what command or script that intitated the copy:** Identify what commands python for example
+3. **Examine timeline:** Look for related suspicious activity before/after
+4. **Escalate if:** This was not legitimate 
+
+
+
+
+
 #### Testing Notes
 - ✅ Verified detection fires on O365 brute force sample data
 - ✅ Alert successfully writes to `notable` index with normalized fields
@@ -677,7 +865,7 @@ command=UserLoginFailed
 - ⚠️ Suppression period set to `60s` - may need adjustment based on alert volume
 - ⚠️ Search period set to `earliest=0` (all time) - change to `-6m` in production
 
-#### Response Guidance
+#### Response Guidance Examples 
 1. **Validate the user account:**
    - Is this a real user or service account?
    - Is the account supposed to be active?
@@ -702,11 +890,6 @@ command=UserLoginFailed
    - Multiple users targeted = Targeted campaign
    - Unusual source countries = Likely malicious
 
-#### Lookup Entry
-```csv
-IAM_ALT-001,Multiple Failed Logons,medium,T1110,Brute Force,Credential Access,Office 365
-```
-
 ---
 
 ## Testing and Production Considerations
@@ -721,10 +904,12 @@ IAM_ALT-001,Multiple Failed Logons,medium,T1110,Brute Force,Credential Access,Of
    - Risk: Searching all historical data on every run causes performance issues
 
 2. **Alert Schedules:**
+ - These are examples - avoid all at 5 minutes - staggeer them to avoid concurrency issues
    - END_ALT-001: Every 5 minutes (`*/5 * * * *`)
    - END_ALT-002: Every 6 minutes (`*/10 * * * *`)
    - END_ALT-003: Every 5 minutes (`*/5 * * * *`)
    - IAM_ALT-001: Every 6 minutes (`*/6 * * * *`)
+   - NET_ALT-001: Every 10 minutes (`*/10 * * * *`)
 
    - Recommendation: Stagger schedules to avoid concurrent searches
    - Monitor: Check `_internal` logs for search concurrency warnings
@@ -734,6 +919,8 @@ IAM_ALT-001,Multiple Failed Logons,medium,T1110,Brute Force,Credential Access,Of
    - END_ALT-002: 60 minutes
    - END_ALT-003: 60 minutes
    - IAM_ALT-001: 60 seconds
+   - NET_ALT-001: 60 seconds
+
    - Recommendation: Align suppression with schedule frequency to avoid duplicate alerts
 
 ### Production Deployment Checklist
@@ -784,11 +971,11 @@ Final output should be written to notable index:
 
 ## Future Use Cases Pipeline
 
-### Planned Detections
+### Planned Detections Examples 
 
 #### Network (NET) Category
-- NET_ALT-001: Suspicious Outbound Network Connections
-- NET_ALT-002: Large Data Exfiltration
+- NET_ALT-001: Large Data Exfiltration 
+- NET_ALT-002: Suspicious Outbound Network Connections
 - NET_ALT-003: Beaconing Activity Detection
 - NET_ALT-004: Tor/Proxy Network Usage
 
@@ -895,14 +1082,15 @@ index=_internal source=*scheduler.log* status=continued
 
 ---
 
-## App Version History
+## Alert Version History
 
-| Version | Date | Changes | Author |
+| App Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0.0 | Oct 2025| Initial release with END_ALT-001 | Security Team |
 | 1.1.0 | Oct 2025 | Added IAM_ALT-001 O365 brute force detection | Security Team |
 | 1.2.0 | Oct 2025 | Added END_ALT-002 sysmon Blocked Process Execution Detected | Security Team |
 | 1.2.0 | Oct 2025 | Added END_ALT-003 Unauthorised Sudo Privilege Escalation | Security Team |
+| 1.4.0 | Oct 2025 | Added NET_ALT-001 Large Data Exfiltration Security Team |
 
 
 ---
@@ -918,6 +1106,6 @@ For questions, issues, or suggestions regarding these use cases:
 ---
 
 **Document Status:** Active  
-**Last Updated:** October 2025  
+**Last Updated:** November 2025  
 **Next Review:** Monthly
 
