@@ -7,6 +7,8 @@ This app is for Security Use Case Dev - Uses Splunk Attack Data
 - DC_cyber_secmon/iopsmon_use_case_tracker.md - This provides an overview of the developed use cases.  
 - DC_cyber_secmon/iops_incident_overview.md - This provides the Incidents dashboard page overview. 
 - DC_cyber_secmon/iops_hosts_reporting.md  - This provides an overview of the hosts not reporting dashboard.
+- DC_cyber_secmon/iops_assets.md  - This provides an overview of the assets config.
+- DC_cyber_secmon/iops_soc_mgmt_report.md - This provides an overview of the SOC manager dashboard board.
 
 
 
