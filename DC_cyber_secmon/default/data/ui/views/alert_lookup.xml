@@ -11,6 +11,7 @@
       <choice value="security_incidents">Security Incidents KV Lookup</choice>
       <choice value="iops_win_exec_interesting_process">Windows Interesting Lookup</choice>
       <choice value="iops_soc_users">Soc Users</choice>
+      <choice value="iops_assets">Assests</choice>
       <default>iops_security_alerts_summary</default>
     </input>
   </fieldset>

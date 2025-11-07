@@ -1,0 +1,13 @@
+asset,ip,mac,dns,owner,category,priority,os,location,is_expected,bunit,pci_domain,requires_av,maintenance_window,notes
+WORKSTATION01,192.168.1.100,00:11:22:33:44:55,workstation01.corp.local,john.smith,workstation,medium,Windows 10,Office-Floor2,true,IT,false,true,Patch Tuesday 2nd Wed of month,Standard user workstation
+WORKSTATION02,192.168.1.101,00:11:22:33:44:56,workstation02.corp.local,jane.doe,workstation,medium,Windows 10,Office-Floor2,true,Finance,false,true,Patch Tuesday 2nd Wed of month,Finance department
+SERVER-PROD-01,10.0.1.50,00:AA:BB:CC:DD:01,server-prod-01.corp.local,sysadmin,server,critical,Windows Server 2019,DataCenter-RackA1,true,IT,true,true,Sunday 02:00-04:00 UTC,Production web server
+SERVER-PROD-02,10.0.1.51,00:AA:BB:CC:DD:02,server-prod-02.corp.local,sysadmin,server,critical,Windows Server 2019,DataCenter-RackA2,true,IT,true,true,Sunday 02:00-04:00 UTC,Production database server
+SERVER-DEV-01,10.0.2.10,00:AA:BB:CC:DD:10,server-dev-01.corp.local,developers,server,low,Ubuntu 20.04,DataCenter-RackB1,true,Engineering,false,true,Anytime,Development test server
+LINUX-DB-01,10.0.1.60,00:AA:BB:CC:DD:20,linux-db-01.corp.local,dbadmin,server,high,CentOS 7,DataCenter-RackA3,true,IT,true,true,Saturday 22:00-02:00 UTC,Production MySQL database
+FIREWALL-01,10.0.0.1,00:FF:EE:DD:CC:01,fw-01.corp.local,netadmin,network,critical,FortiOS,DataCenter-Edge,true,IT,true,false,Emergency only,Primary firewall
+LAPTOP-REMOTE-01,DHCP,00:11:22:33:55:01,laptop-remote-01.corp.local,contractor1,laptop,medium,macOS 13,Remote,true,Engineering,false,true,Flexible,Remote contractor laptop
+DECOMMISSIONED-01,192.168.1.199,00:DE:AD:BE:EF:01,old-server.corp.local,none,server,low,Windows Server 2012,Storage,false,IT,false,false,Decommissioned 2024-10,To be removed from network
+TEST-SYSTEM,10.0.3.100,00:TE:ST:00:00:01,test.corp.local,qa-team,workstation,low,Various,Lab,true,Engineering,false,false,None,Test system - intermittent connectivity expected
+cc9b25d6-efc9-11eb-926b-550bf0943fbb,192.168.0.12,,attackdata.ops.com,Security Tester ,laptop,high,Apple Mac ,Home Lab ,true ,Engineering ,false ,true ,None,Running Splunk Attack Data  
+15c6f211-a960-4f60-b111-bd2ae129ef7d,192.168.0.12,,attackdata.ops.com,Security Tester ,laptop,high,Apple Mac ,Home Lab ,true ,Engineering ,false ,true ,None,Running Splunk Attack Data  

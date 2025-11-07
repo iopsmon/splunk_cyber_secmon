@@ -28,7 +28,7 @@ access = read : [ * ], write : [ admin ]
 export = system
 owner = nobody
 version = 9.3.4
-modtime = 1761905569.682369000
+modtime = 1762323396.771531000
 
 [savedsearches/END_ALT-002]
 access = read : [ * ], write : [ admin, sc_admin ]
@@ -55,3 +55,18 @@ modtime = 1762073828.202924000
 [views/mgr_report]
 version = 9.3.4
 modtime = 1762248588.770039000
+
+[lookups/assets.csv]
+version = 9.3.4
+modtime = 1762359348.996485000
+
+[views/hosts_report]
+version = 9.3.4
+modtime = 1762519924.082342000
+
+[savedsearches/NET_ALT-001]
+access = read : [ * ], write : [ admin, sc_admin ]
+export = system
+owner = nobody
+version = 9.3.4
+modtime = 1762423100.147188000
