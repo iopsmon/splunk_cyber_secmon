@@ -6,6 +6,8 @@ It serves as a lightweight, focused platform for security analysts and detection
 
 I developed this for myself as a way to develop use cases and skills.
 
+![Cyber Security Monitoring Image](DC_cyber_secmon/static/secmon_dashboard.jpg) 
+
 ---
 
 ## 🚀 Getting Started
