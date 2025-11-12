@@ -1,0 +1,83 @@
+tool,category,cmd_patterns,description
+nmap,Network Scanning,nmap,Network discovery and port scanning tool
+masscan,Network Scanning,masscan,Very fast Internet-scale port scanner
+zenmap,Network Scanning,zenmap,GUI for nmap
+nikto,Web Vulnerability Scanning,nikto,Web server scanner for known issues
+sqlmap,Web Vulnerability/DB,sqlmap,Automated SQL injection and database takeover tool
+gobuster,Web Discovery,gobuster,Directory/file and DNS busting brute force tool
+dirb,Web Discovery,dirb,Web content scanner (directory brute force)
+dirbuster,Web Discovery,dirbuster,GUI directory/file brute force tool
+ffuf,Web Discovery,ffuf,Fast web fuzzer for directories and parameters
+wpscan,Web Vulnerability,wpscan,WordPress vulnerability scanner
+burpsuite,Proxy/Analysis,burp,Web proxy for inspection and manipulation
+zaproxy,Proxy/Analysis,zap,OWASP ZAP web application scanner/proxy
+hydra,Password Attacks,hydra,Online service brute-force password cracker
+medusa,Password Attacks,medusa,Parallel modular login brute-forcer
+john,Password Cracking,john,Password cracker (John the Ripper)
+hashcat,Password Cracking,hashcat,GPU-powered password recovery tool
+aircrack-ng,Wireless,aicrack-ng,Wireless packet capture and cracking suite
+airodump-ng,Wireless,airodump-ng,Wireless packet capture tool
+aireplay-ng,Wireless,aireplay-ng,Packet injection/attack tool for wireless
+airmon-ng,Wireless,airmon-ng,Wireless interface mode manager
+bettercap,Network MITM,bettercap,Comprehensive network manipulation and MITM framework
+ettercap,Network MITM,ettercap,ARP spoofing and MITM suite
+mitmproxy,Network MITM,mitmproxy,Interactive HTTPS proxy for MITM and debugging
+sslstrip,Network MITM,sslstrip,Strip TLS to downgrade to HTTP (legacy tool)
+responder,Credentials/Poisoning,responder,LLMNR/NBT-NS/MDNS poisoner and credential capture
+tshark,Packet Capture,tshark,Terminal-based Wireshark/TCP dump analysis
+wireshark,Packet Capture,wireshark,Interactive packet capture and analysis GUI
+tcpdump,Packet Capture,tcpdump,Command-line packet capture tool
+nc,Networking/nc,nc,Netcat: network utility for reading/writing sockets
+netcat,Networking/netcat,netcat,Alias/variant of nc
+socat,Networking/socat,socat,Socket relay and port forwarding tool
+curl,HTTP Clients,curl,HTTP client often used to download/submit data
+wget,HTTP Clients,wget,Non-interactive network downloader
+proxychains,Proxying,proxychains,Force programs to use SOCKS/HTTP proxy chains
+tor,Anonymity,tor,Onion routing network / tor client usage
+beef-xss,Browser Exploitation,beef,Browser Exploitation Framework
+recon-ng,Reconnaissance,recon-ng,Web recon framework
+theharvester,Reconnaissance,theharvester,Email/host harvesting tool
+maltego,Reconnaissance,maltego,Graphical link analysis and reconnaissance (may be packaged)
+searchsploit,Exploit Research,searchsploit,Local exploit database search (exploit-db)
+msfconsole,Exploitation/msf,msfconsole,Metasploit interactive console
+msfvenom,Payload Generation,msfvenom,Metasploit payload generator/encoder
+metasploit,Exploitation,metasploit,Metasploit Framework (general)
+exploitdb,Exploit Research,exploitdb,Exploit-DB tools (search usage)
+openvas,Vulnerability Scanning,openvas,OpenVAS vulnerability scanner (may be installed)
+wpscan,WordPress Scanner,wpscan,WordPress vulnerability discovery (repeat for emphasis)
+imapclient,Mail/Collection,imap,Mail access tools (imap/imapclient)
+smtp-cli,Mail/Collection,smtp-cli,SMTP client used in tests/attacks
+ftp,File Transfer,ftp,FTP client usage
+telnet,Remote Access,telnet,Telnet client usage (often suspicious)
+ssh,Remote Access,ssh,SSH usage (legitimate but relevant for correlation)
+smbclient,SMB Tools,smbclient,SMB client for accessing Windows shares
+smbmap,SMB Tools,smbmap,SMB enumeration and mapping tool
+enum4linux,SMB/Enumeration,enum4linux,SMB/CIFS enumeration script
+crackmapexec,Post-Exploitation,cme,CrackMapExec: SMB/AD auditing and lateral movement
+impacket,Post-Exploitation,impacket,Collection of Python scripts (wmiexec.py, psexec.py, smbserver.py, secretsdump.py)
+wmiexec.py,Impacket Scripts,wmiexec.py,Impacket WMI execution script
+psexec.py,Impacket Scripts,psexec.py,Impacket PsExec-like tool
+secretsdump.py,Impacket Scripts,secretsdump.py,Dump credentials from remote systems
+smbserver.py,Impacket Scripts,smbserver.py,Impacket SMB server for file hosting
+netdiscover,Network Discovery,netdiscover,ARP-based network discovery tool
+arp-scan,Network Discovery,arp-scan,Scan local network via ARP requests
+nessus,Nessus Scanner,nessus,Nessus usage (if present on host)
+sqlninja,SQL Injection/sqlninja,SQL injection exploitation tool
+wpscan,WordPress,wpscan,WordPress enumeration and vulnerability scanner
+feroxbuster,Web Discovery,feroxbuster,Recursive content discovery and fuzzing tool
+dirsearch,Web Discovery,dirsearch,Directory discovery tool (python)
+veil,Payloads/Bypass,veil,Payload generation and obfuscation framework
+veil-evasion,Payloads/Bypass,veil-evasion,Payload obfuscation/evasion toolset
+proxychains4,Proxying,proxychains4,Proxychains v4 usage
+gdb,Debugging,gdb,GNU debugger (used for reverse engineering/exploit dev)
+radare2,Reverse Engineering,radare2,Reverse engineering framework (r2)
+apktool,Mobile/RE,apktool,Android APK reverse-engineering tool
+jadx,Mobile/RE,jadx,Android decompiler
+soapui,Web Service Testing,soapui,Web service and API testing tool
+whatweb,Web Recon,whatweb,Web technology fingerprinting tool
+wpscan,WordPress,wpscan,WordPress scanner (duplicate entries OK for detection)
+vncviewer,Remote Access,vncviewer,VNC client usage
+mshta,Living-off-the-land,mshta,Windows mshta usage (often used to execute remote scripts)
+cme,CrackMapExec,cme,Short alias for crackmapexec
+gpg,Encryption/gpg,gpg,GPG usage (key handling, sometimes suspicious)
+hash-identifier,Password Tools,hash-identifier,Identify hash types

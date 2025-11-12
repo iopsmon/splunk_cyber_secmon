@@ -4,3 +4,4 @@ END_ALT-002,Blocked Process Execution Detected,high,T1059,Command and Scripting 
 END_ALT-003,Unauthorised Privilege Escalation,high,T1548.003,Sudo and Sudo Caching,Privilege Escalation,Linux Secure Logs,priv_username|username|process|dvc
 NET_ALT-001,Exfiltration Over Web Service,high,T1567,Exfiltration Over Web Service,Exfiltration,Nginx Access Logs,target_info|process_info|src_entity|src|src_ip|http_method
 IAM_ALT-001,Multiple Failed Logons,medium,T1110,Brute Force,Credential Access,Windows Security,user|src_ip|logon_type
+WEB_ALT-001,SQL Injection Attack,high,T1190,Exfiltration,Intial Access,Nginx Access Logs,src_ip|uri_path

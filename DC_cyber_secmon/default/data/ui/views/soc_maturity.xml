@@ -1,0 +1,159 @@
+<dashboard version="1.1" theme="dark">
+  <label>SOC Maturity Assessment Overview</label>
+  <description>Dashboard to visualize SOC maturity based on the soc_maturity_assessment.csv lookup, highlighting scores by category and prioritizing gaps based on weight.</description>
+  <search id="assessmentBaseSearch">
+    <query> | inputlookup iops_soc_assessment</query>
+  </search>
+  <!-- Row 1: High-Level KPIs -->
+  <!-- Row 2: Breakdown by Category -->
+  <!-- Row 3: Actionable Insights - Items to Address -->
+  <!-- Row 4: Drilldown Panel for Critical Gaps -->
+  <!-- Row 5 : Lookup File  -->
+  <row>
+    <panel>
+      <single>
+        <title>Overall Maturity Score</title>
+        <search base="assessmentBaseSearch">
+          <query>
+| stats sum(eval(if(status="yes", weight, 0))) as completed_weight, sum(weight) as total_weight
+| eval maturity_score=round((completed_weight/total_weight)*100, 0)
+| table maturity_score</query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">162</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0xca4b4b","0xf79520","0x6db7c6","0x53a051","0x3c444d"]</option>
+        <option name="rangeValues">[0,70,90,100]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unit">%</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Critical Gaps (Weight 9+)</title>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no" AND weight &gt;= 9
+| stats count</query>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="height">153</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0xf79520","0xca4b4b"]</option>
+        <option name="rangeValues">[0,1,3]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unit">gaps</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+        <drilldown>
+          <set token="show_critical_gaps">true</set>
+        </drilldown>
+      </single>
+    </panel>
+    <panel>
+      <chart>
+        <title>Completion Status</title>
+        <search base="assessmentBaseSearch">
+          <query>
+| stats count by status
+| rename status as "Status"</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Maturity Score by Category</title>
+      <table>
+        <search base="assessmentBaseSearch">
+          <query>
+| stats sum(eval(if(status="yes", weight, 0))) as completed_weight, sum(weight) as total_weight by category
+| eval "Maturity Score"=round((completed_weight/total_weight)*100, 0) . "%"
+| eval "Completed Items"=completed_weight
+| eval "Total Weight"=total_weight
+| rename category as "Category"
+| table "Category", "Maturity Score", "Completed Items", "Total Weight"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel>
+      <chart>
+        <title>Completion Status by Category</title>
+        <search base="assessmentBaseSearch">
+          <query>
+| chart count by category, status</query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Prioritized Gaps (Status = "no")</title>
+      <table>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no"
+| sort - weight
+| rename category as "Category", question as "Question / Gap", weight as "Weight", notes as "Notes"
+| table "Category", "Question / Gap", "Weight", "Notes"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="Weight">
+          <colorPalette type="map">{"10": "#DC4E41", "9": "#F8BE34", "8": "#F8BE34"}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row depends="$show_critical_gaps$">
+    <panel>
+      <title>Details: Critical Gaps (Weight 9+)</title>
+      <event>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no" AND weight &gt;= 9
+| sort - weight</query>
+        </search>
+        <option name="list.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Assessment Lookup Details</title>
+      <table>
+        <search base="assessmentBaseSearch">
+          <query>| table *
+
+</query>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>

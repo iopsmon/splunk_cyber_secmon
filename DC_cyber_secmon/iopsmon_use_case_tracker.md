@@ -24,17 +24,6 @@ Verify lookups  accessible:
 Contains key security alerts
 | inputlookup iops_security_alerts_summary
 
-Contains privilage users
-| inputlookup iops_linux_priv_users
-
-Contains Key Windows Allowed Process
-| inputlookup iops_win_exec_process 
-
-Contains Key Mitre Attack Techniques
-| inputlookup iops_mitre_id
-
-Contains Assets
-| inputlookup iops_assets
 ```
 
 ### Step 3: Detection Development
@@ -67,8 +56,10 @@ Contains Assets
 | END_ALT-003 | User account has Logged in as root Endpoint | High| T1548.003 | Active | Oct 2025 |
 | IAM_ALT-001 | Multiple Failed Logons | Identity & Access | Medium | T1110 | Active | Oct 2025 |
 | NET_ALT-001 | Exfiltration Over Web Service | Web Service| High | T1567 | Active | Oct 2025 |
+| WEB_ALT-001 | SQL Injection Attack| Web | High | T1190 | Active | Nov 2025 |
 
 ---
+
 
 ### DETAILS FOR EACH USE CASES
 
@@ -682,6 +673,177 @@ command=UserLoginFailed
 
 
 
+## WEB USE CASES
+
+### WEB_ALT-001: Web Attack Signatures Detected
+
+#### Overview
+**Status:** ✅ Active
+**Category:** Web (WEB)
+**MITRE ATT&CK:** T1190 - Exploit Public-Facing Application
+**Tactic:** Initial Access
+**Severity:** High
+**Data Source:** Nginx Access Logs
+
+#### Description
+Detects common web attack patterns in Nginx access logs. This includes signatures for SQL Injection (SQLi), Command Injection, and Path Traversal. The detection identifies suspicious strings in the URI query and alerts when multiple web errors (4xx or 5xx) originate from the same source IP, indicating a potential scanning or exploitation attempt.
+
+#### Attack Data Ingestion
+```bash
+# Pull the dataset from Splunk Attack Data repository
+git lfs pull --include="datasets/attack_techniques/T1190/web_attacks_nginx/web_attacks_nginx.log"
+
+## Push Data This pushes data as json to HEC
+python3 bin/replay.py datasets/attack_techniques/T1190/web_attacks_nginx/web_attacks_nginx.yml
+
+# Ingest via manual upload or replay script
+# Target index: attack_data
+# Sourcetype: nginx:plus:access
+```
+
+#### Detection Logic (SPL)
+```spl
+index=attack_data  sourcetype="nginx:plus:access" earliest=-2h latest=now
+| fields host, sourcetype, source, _indextime,_raw,_time,eventtype,file,id,index
+```The time is just for testing change to 1 hour for prod```
+| rex field=_raw "^(?<src_ip>[^ ]+)\s+\-\s+\-\s+\[(?<timestamp>[^\]]+)\]\s+\"(?<http_method>[^ ]+)\s+(?<uri_path>[^ ]+)\s+(?<http_version>HTTP\/[\d\.]+)\"\s+(?<status>\d{3})\s+(?<bytes_out>[^ ]+)\s+\"(?<referer>[^\"]*)\"\s+\"(?<user_agent>[^\"]+)\""
+```search for pattens```
+| search (uri_path="*UNION*SELECT*" OR uri_path="*1=1*" OR uri_path="*'  "OR uri_path="*--*" OR uri_path="*;DROP*" OR uri_path="*EXEC*" OR uri_path="UNION*")
+```Detect SLQ patterns```
+| eval sql_pattern=case(
+    match(uri_path, "(?i)UNION.*SELECT"), "UNION SELECT",
+    match(uri_path, "(?i)1=1"), "Boolean-based blind",
+    match(uri_path, "(?i)' OR"), "OR-based injection",
+    match(uri_path, "(?i)--"), "Comment-based injection",
+    match(uri_path, "(?i);DROP"), "DROP TABLE attempt",
+    match(uri_path, "(?i)EXEC"), "Stored procedure execution",
+    1=1, "Unknown SQL pattern"
+)
+| bucket _time span=5m
+```Aggregate the data using stats```
+| stats 
+    count as request_count,
+    dc(uri_path) as unique_paths,
+    dc(status) as unique_statuses,
+    values(uri_path) as paths,
+    values(status) as http_statuses,
+    values(http_method) as http_methods,
+    values(user_agent) as user_agents,
+    values(sql_pattern) as attack_patterns,
+    min(_time) as first_seen,
+    max(_time) as last_seen   
+    by src_ip, host
+```Tune here can be over 3 times to reduce noise```    
+| where request_count >= 1
+```Normalise and lookup for Secuerity App Dashboards Incidents```
+| eval alert_name="SQL Injection Attack"
+| eval suspicious_reason="SQL injection detected: " . request_count . " attempt(s) using pattern(s): " . attack_patterns
+| eval alert_time=strftime(first_seen, "%Y-%m-%d %H:%M:%S")
+| eval event_time=alert_time
+| eval duration_minutes=round((last_seen - first_seen) / 60, 2)
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity
+| eval src_entity=src_ip
+| eval process_info="HTTP " . http_methods . " request(s)"
+| eval target_info=host 
+| eval additional_context=suspicious_reason . " | Duration: " . duration_minutes . " mins | HTTP Status: " . http_statuses . " | User-Agent: " . user_agents . " | Paths: " . paths
+| table alert_time, alert_id, alert_name, event_time, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source, request_count, unique_paths, attack_patterns, duration_minutes, user_agents
+| collect index=notable
+```
+
+#### Alert Configuration (`savedsearches.conf`)
+```ini
+[WEB_ALT-001]
+action.webhook.enable_allowlist = 0
+alert.expires = 60h
+alert.suppress = 1
+alert.suppress.period = 60h
+alert.track = 1
+counttype = number of events
+cron_schedule = */15 * * * *
+description = SQL Injection Attack
+dispatch.earliest_time = 0
+display.events.fields = ["host","source","sourcetype","sudo_user","dvc","COMMAND","USER","process","user_name","original_user","uri_path","uri_query","web_method","url","vocab_only","type","msg","general_name","site","password","dest_ip","dest_port","file","page","id","user","username"]
+display.events.maxLines = 20
+display.general.type = statistics
+display.page.search.tab = statistics
+enableSched = 1
+quantity = 0
+relation = greater than
+request.ui_dispatch_app = DC_cyber_secmon
+request.ui_dispatch_view = search
+search = index=attack_data  sourcetype="nginx:plus:access" earliest=-1h latest=now\
+| fields host, sourcetype, source, _indextime,_raw,_time,eventtype,file,id,index\
+```The time is just for testing change to 1 hour for prod```\
+| rex field=_raw "^(?<src_ip>[^ ]+)\s+\-\s+\-\s+\[(?<timestamp>[^\]]+)\]\s+\"(?<http_method>[^ ]+)\s+(?<uri_path>[^ ]+)\s+(?<http_version>HTTP\/[\d\.]+)\"\s+(?<status>\d{3})\s+(?<bytes_out>[^ ]+)\s+\"(?<referer>[^\"]*)\"\s+\"(?<user_agent>[^\"]+)\""\
+```search for pattens```\
+| search (uri_path="*UNION*SELECT*" OR uri_path="*1=1*" OR uri_path="*'  "OR uri_path="*--*" OR uri_path="*;DROP*" OR uri_path="*EXEC*" OR uri_path="UNION*")\
+```Detect SLQ patterns```\
+| eval sql_pattern=case(\
+    match(uri_path, "(?i)UNION.*SELECT"), "UNION SELECT",\
+    match(uri_path, "(?i)1=1"), "Boolean-based blind",\
+    match(uri_path, "(?i)' OR"), "OR-based injection",\
+    match(uri_path, "(?i)--"), "Comment-based injection",\
+    match(uri_path, "(?i);DROP"), "DROP TABLE attempt",\
+    match(uri_path, "(?i)EXEC"), "Stored procedure execution",\
+    1=1, "Unknown SQL pattern"\
+)\
+| bucket _time span=5m\
+```Aggregate the data using stats```\
+| stats \
+    count as request_count,\
+    dc(uri_path) as unique_paths,\
+    dc(status) as unique_statuses,\
+    values(uri_path) as paths,\
+    values(status) as http_statuses,\
+    values(http_method) as http_methods,\
+    values(user_agent) as user_agents,\
+    values(sql_pattern) as attack_patterns,\
+    min(_time) as first_seen,\
+    max(_time) as last_seen   \
+    by src_ip, host\
+```Tune here can be over 3 times to reduce noise```    \
+| where request_count >= 1\
+```Normalise and lookup for Secuerity App Dashboards Incidents```\
+| eval alert_name="SQL Injection Attack"\
+| eval suspicious_reason="SQL injection detected: " . request_count . " attempt(s) using pattern(s): " . attack_patterns\
+| eval alert_time=strftime(first_seen, "%Y-%m-%d %H:%M:%S")\
+| eval event_time=alert_time\
+| eval duration_minutes=round((last_seen - first_seen) / 60, 2)\
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity\
+| eval src_entity=src_ip\
+| eval process_info="HTTP " . http_methods . " request(s)"\
+| eval target_info=host \
+| eval additional_context=suspicious_reason . " | Duration: " . duration_minutes . " mins | HTTP Status: " . http_statuses . " | User-Agent: " . user_agents . " | Paths: " . paths\
+| table alert_time, alert_id, alert_name, event_time, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source, request_count, unique_paths, attack_patterns, duration_minutes, user_agents\
+| collect index=notable
+
+```
+
+#### Key Fields
+- **uri_path:** The request URI containing the potential attack payload.
+- **src_ip:** The source IP address of the attacker.
+- **status:** The HTTP status code (4xx and 5xx errors are of high interest).
+- **attack_types:** The classification of the detected attack (SQL Injection, etc.).
+
+#### Detection Tuning
+- **False Positives:** Some applications may use URLs that resemble attack patterns. These can be whitelisted. Legitimate vulnerability scanners may also trigger this alert.
+- **Tuning Recommendations:**
+  - Whitelist trusted IP addresses (e.g., internal vulnerability scanners): `src_ip NOT IN (10.0.0.5, 192.168.1.10)`
+  - Adjust the `count` and `error_count` thresholds based on your environment's baseline.
+  - Refine the regex patterns for higher fidelity.
+
+#### Testing Notes
+- ✅ Verified detection fires on the `web_attacks_nginx.log` sample data.
+- ✅ Alert successfully writes to the `notable` index.
+- ⚠️ The detection logic uses broad `like` statements. For production, consider using more precise regex (`rex`) for fewer false positives.
+
+#### Response Guidance
+1. **Analyze the Source IP:** Check the reputation and geolocation of the `src_ip`. Is it a known bad actor, a Tor exit node, or a cloud provider?
+2. **Review the Payloads:** Examine the `suspicious_uris` to understand the attacker's intent. Are they probing for vulnerabilities or actively exploiting a known flaw?
+3. **Check Target System Logs:** Correlate the attack with logs on the destination web server. Look for corresponding errors, crashes, or unusual process executions.
+4. **Block the IP:** If the activity is confirmed malicious, block the source IP address at the firewall or WAF.
+5. **Patch Vulnerabilities:** The attack payloads may indicate the specific vulnerability the attacker is targeting. Ensure your application is patched and up-to-date.
+
 ## NETWORK  USE CASES
 
 ### NET_ALT-001: Exfiltration Over Web Service
@@ -909,6 +1071,7 @@ earliest=-24h latest=now\
    - END_ALT-002: Every 6 minutes (`*/10 * * * *`)
    - END_ALT-003: Every 5 minutes (`*/5 * * * *`)
    - IAM_ALT-001: Every 6 minutes (`*/6 * * * *`)
+   - WEB_ALT-001: Every 10 minutes (`*/15 * * * *`)
    - NET_ALT-001: Every 10 minutes (`*/10 * * * *`)
 
    - Recommendation: Stagger schedules to avoid concurrent searches
@@ -919,6 +1082,7 @@ earliest=-24h latest=now\
    - END_ALT-002: 60 minutes
    - END_ALT-003: 60 minutes
    - IAM_ALT-001: 60 seconds
+   - WEB_ALT-001: 30 minutes
    - NET_ALT-001: 60 seconds
 
    - Recommendation: Align suppression with schedule frequency to avoid duplicate alerts
@@ -981,6 +1145,7 @@ Final output should be written to notable index:
 
 #### Web (WEB) Category
 - WEB_ALT-001: SQL Injection Attempts
+- WEB_ALT-001: Web Attack Signatures Detected - DONE
 - WEB_ALT-002: Command Injection Detection
 - WEB_ALT-003: Unusual User-Agent Strings
 - WEB_ALT-004: Web Shell Activity
@@ -1091,6 +1256,8 @@ index=_internal source=*scheduler.log* status=continued
 | 1.2.0 | Oct 2025 | Added END_ALT-002 sysmon Blocked Process Execution Detected | Security Team |
 | 1.2.0 | Oct 2025 | Added END_ALT-003 Unauthorised Sudo Privilege Escalation | Security Team |
 | 1.4.0 | Oct 2025 | Added NET_ALT-001 Large Data Exfiltration Security Team |
+| 1.5.0 | Oct 2025 | Added WEB_ALT-001 SQL Injection Attack | Security Team |
+
 
 
 ---

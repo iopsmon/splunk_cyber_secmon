@@ -1,0 +1,325 @@
+<form version="1.1" theme="dark">
+  <label>Use Case Factory - Detection Pipeline</label>
+  <description>Track security detection use cases through the development lifecycle</description>
+  <search id = "lookupbasesearch" >
+    <query> | inputlookup iops_uc_factory</query>
+    <earliest>-1d@d</earliest>
+    <latest>now</latest>
+  </search>
+  
+  <!-- Filters -->
+  <fieldset submitButton="true" autoRun="true">
+    <input type="dropdown" token="status_filter">
+      <label>Status</label>
+      <choice value="*">All Statuses</choice>
+      <choice value="ideation">Ideation</choice>
+      <choice value="in_development">In Development</choice>
+      <choice value="testing">Testing</choice>
+      <choice value="approved">Approved</choice>
+      <choice value="active">Active (Production)</choice>
+      <choice value="rejected">Rejected</choice>
+      <choice value="retired">Retired</choice>
+      <default>*</default>
+    </input>
+    
+    <input type="dropdown" token="category_filter">
+      <label>Category</label>
+      <choice value="*">All Categories</choice>
+      <choice value="Endpoint">Endpoint (END)</choice>
+      <choice value="Network">Network (NET)</choice>
+      <choice value="Web">Web (WEB)</choice>
+      <choice value="Identity">Identity (IAM)</choice>
+      <default>*</default>
+    </input>
+    
+    <input type="dropdown" token="priority_filter">
+      <label>Priority</label>
+      <choice value="*">All Priorities</choice>
+      <choice value="critical">Critical</choice>
+      <choice value="high">High</choice>
+      <choice value="medium">Medium</choice>
+      <choice value="low">Low</choice>
+      <default>*</default>
+    </input>
+  </fieldset>
+  
+  <!-- Row 1: Pipeline Summary Statistics -->
+  <row>
+    <panel>
+      <title>Total Use Cases</title>
+      <single>
+        <search base = "lookupbasesearch" >
+          <query>
+
+| search status="$status_filter$" category="$category_filter$" priority="$priority_filter$"
+| stats count
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="underLabel">In Pipeline</option>
+      </single>
+    </panel>
+    
+    <panel>
+      <title>Active in Production</title>
+      <single>
+        <search base = "lookupbasesearch" >
+          <query>
+
+| where status="active"
+| search category="$category_filter$" priority="$priority_filter$"
+| stats count
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0xF7BC38","0x65A637"]</option>
+        <option name="rangeValues">[5]</option>
+        <option name="useColors">1</option>
+        <option name="underLabel">Detecting Threats</option>
+      </single>
+    </panel>
+    
+    <panel>
+      <title>In Development</title>
+      <single>
+        <search base = "lookupbasesearch" >
+          <query>
+
+| where status IN ("ideation", "in_development", "testing", "approved")
+| search category="$category_filter$" priority="$priority_filter$"
+| stats count
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
+        <option name="rangeValues">[0,3]</option>
+        <option name="useColors">1</option>
+        <option name="underLabel">Pipeline</option>
+      </single>
+    </panel>
+    
+    <panel>
+      <title>Overdue Use Cases</title>
+      <single>
+        <search base = "lookupbasesearch" >
+          <query>
+
+| where status!="active" AND status!="rejected" AND status!="retired"
+| eval target_epoch=strptime(target_date, "%Y-%m-%d")
+| where target_epoch &lt; now()
+| search category="$category_filter$" priority="$priority_filter$"
+| stats count
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
+        <option name="rangeValues">[0,1]</option>
+        <option name="useColors">1</option>
+        <option name="underLabel">Past Target Date</option>
+      </single>
+    </panel>
+  </row>
+  
+  <!-- Row 2: Pipeline Funnel -->
+  <row>
+    <panel>
+      <title>Use Case Development Pipeline</title>
+      <chart>
+        <search base = "lookupbasesearch" >
+          <query>
+
+| search category="$category_filter$" priority="$priority_filter$"
+| eval stage_order=case(
+    status="ideation", 1,
+    status="in_development", 2,
+    status="testing", 3,
+    status="approved", 4,
+    status="active", 5,
+    status="rejected", 6,
+    status="retired", 7,
+    1=1, 99
+)
+| eval stage_label=case(
+    status="ideation", "1. Ideation",
+    status="in_development", "2. In Development",
+    status="testing", "3. Testing",
+    status="approved", "4. Approved",
+    status="active", "5. Active (Prod)",
+    status="rejected", "6. Rejected",
+    status="retired", "7. Retired",
+    1=1, "Unknown"
+)
+| stats count by stage_label, stage_order
+| sort stage_order
+| fields - stage_order
+          </query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.axisTitleX.text">Count</option>
+        <option name="charting.axisTitleY.text">Pipeline Stage</option>
+        <option name="charting.seriesColors">[0x1E88E5,0x43A047,0xFB8C00,0x8E24AA,0x00897B,0xE53935,0x757575]</option>
+      </chart>
+    </panel>
+    
+    <panel>
+      <title>Use Cases by Category</title>
+      <chart>
+        <search base = "lookupbasesearch" >
+          <query>
+
+| search status="$status_filter$" priority="$priority_filter$"
+| stats count by category
+| sort - count
+          </query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.seriesColors">[0x1E88E5,0x43A047,0xFB8C00,0x8E24AA]</option>
+      </chart>
+    </panel>
+  </row>
+  
+  <!-- Row 3: MITRE ATT&CK Coverage -->
+  <row>
+    <panel>
+      <title>MITRE ATT&amp;CK Tactics Covered</title>
+      <chart>
+        <search base = "lookupbasesearch" >
+          <query>
+
+| where status="active"
+| stats count by mitre_tactic
+| sort - count
+          </query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.axisTitleX.text">Active Use Cases</option>
+        <option name="charting.axisTitleY.text">MITRE Tactic</option>
+      </chart>
+    </panel>
+    
+    <panel>
+      <title>Active Use Cases by Priority</title>
+      <chart>
+        <search base = "lookupbasesearch" >
+          <query>
+
+| where status="active"
+| search category="$category_filter$"
+| stats count by priority
+| sort - count
+          </query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.seriesColors">[0xD93F3C,0xF58F39,0xF7BC38,0x65A637]</option>
+      </chart>
+    </panel>
+  </row>
+  
+  <!-- Row 4: Detailed Use Case Table -->
+  <row>
+    <panel>
+      <title>Use Case Details</title>
+      <table>
+        <search base = "lookupbasesearch" >
+          <query>
+
+| search status="$status_filter$" category="$category_filter$" priority="$priority_filter$"
+| eval days_in_pipeline=round((strptime(updated_date, "%Y-%m-%d") - strptime(created_date, "%Y-%m-%d"))/86400, 0)
+| eval target_epoch=strptime(target_date, "%Y-%m-%d")
+| eval days_until_target=round((target_epoch - now())/86400, 0)
+| eval status_indicator=case(
+    status="active", "✓ Active",
+    status="approved", "→ Approved",
+    status="testing", "⚙ Testing",
+    status="in_development", "⚒ Dev",
+    status="ideation", "💡 Idea",
+    status="rejected", "✗ Rejected",
+    status="retired", "⊗ Retired",
+    1=1, status
+)
+| sort - priority, status, use_case_id
+| table use_case_id, use_case_name, category, mitre_technique_id, mitre_tactic, status_indicator, priority, assigned_to, days_in_pipeline, target_date, days_until_target, data_source, notes
+| rename use_case_id as "Use Case ID", use_case_name as "Use Case Name", category as "Category", mitre_technique_id as "MITRE Technique", mitre_tactic as "MITRE Tactic", status_indicator as "Status", priority as "Priority", assigned_to as "Assigned To", days_in_pipeline as "Days in Pipeline", target_date as "Target Date", days_until_target as "Days Until Target", data_source as "Data Source", notes as "Notes"
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="count">20</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Priority">
+          <colorPalette type="map">{"critical":#D93F3C,"high":#F58F39,"medium":#F7BC38,"low":#65A637}</colorPalette>
+        </format>
+        <format type="color" field="Status">
+          <colorPalette type="map">{"✓ Active":#65A637,"→ Approved":#8E24AA,"⚙ Testing":#FB8C00,"⚒ Dev":#1E88E5,"💡 Idea":#43A047,"✗ Rejected":#E53935,"⊗ Retired":#757575}</colorPalette>
+        </format>
+        <format type="color" field="Days Until Target">
+          <colorPalette type="minMidMax" maxColor="#D93F3C" midColor="#F7BC38" minColor="#65A637"></colorPalette>
+          <scale type="minMidMax" midType="number" midValue="7"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  
+  <!-- Row 5: Team Workload -->
+  <row>
+    <panel>
+      <title>Team Workload - Active Development</title>
+      <table>
+        <search base = "lookupbasesearch" >
+          <query>
+| where status!="active" AND status!="rejected" AND status!="retired"
+| search category="$category_filter$" priority="$priority_filter$"
+| stats 
+    count as total_assigned,
+    count(eval(status="ideation")) as ideation,
+    count(eval(status="in_development")) as in_dev,
+    count(eval(status="testing")) as testing,
+    count(eval(status="approved")) as approved,
+    count(eval(priority="critical" OR priority="high")) as high_priority
+    by assigned_to
+| eval workload_score=ideation*1 + in_dev*3 + testing*2 + approved*1 + high_priority*2
+| sort - workload_score
+| rename assigned_to as "Engineer", total_assigned as "Total Assigned", ideation as "Ideation", in_dev as "In Development", testing as "Testing", approved as "Approved", high_priority as "High Priority", workload_score as "Workload Score"
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="count">10</option>
+        <format type="color" field="Workload Score">
+          <colorPalette type="minMidMax" maxColor="#D93F3C" midColor="#F7BC38" minColor="#65A637"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  
+  <!-- Row 6: Timeline View -->
+  <row>
+    <panel>
+      <title>Use Case Completion Timeline (Last 30 Days)</title>
+      <chart>
+        <search base = "lookupbasesearch" >
+          <query>
+
+| where isnotnull(prod_date)
+| eval prod_epoch=strptime(prod_date, "%Y-%m-%d")
+| where prod_epoch &gt;= relative_time(now(), "-30d")
+| eval week=strftime(prod_epoch, "%Y-%U")
+| stats count by week, category
+| xyseries week category count
+          </query>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.axisTitleX.text">Week</option>
+        <option name="charting.axisTitleY.text">Use Cases Deployed</option>
+        <option name="charting.legend.placement">right</option>
+      </chart>
+    </panel>
+  </row>
+  
+</form>
+
+

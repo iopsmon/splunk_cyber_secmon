@@ -12,6 +12,11 @@
       <choice value="iops_win_exec_interesting_process">Windows Interesting Lookup</choice>
       <choice value="iops_soc_users">Soc Users</choice>
       <choice value="iops_assets">Assests</choice>
+      <choice value="iops_post_alert_actions">Post Alert Actions</choice>
+      <choice value="iops_http_status_codes">Http Status Codes</choice>
+      <choice value="iops_kali_tools">Kali Tools</choice>
+      <choice value="iops_uc_factory">Use Case Factory</choice>
+      <choice value="iops_soc_assessment">Soc Maturity Assessment</choice>
       <default>iops_security_alerts_summary</default>
     </input>
   </fieldset>
