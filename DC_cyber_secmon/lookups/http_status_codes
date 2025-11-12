@@ -1,0 +1,40 @@
+code,phrase,category,description
+100,Continue,Informational,Client should continue with request
+101,Switching Protocols,Informational,Server is switching protocols as requested
+200,OK,Success,Request succeeded
+201,Created,Success,Resource created successfully
+202,Accepted,Success,Request accepted but not completed
+203,Non-Authoritative Information,Success,Response with information from another source
+204,No Content,Success,Request succeeded but no content returned
+206,Partial Content,Success,Partial resource delivered (range requests)
+300,Multiple Choices,Redirection,Multiple options for the resource
+301,Moved Permanently,Redirection,Resource has moved permanently
+302,Found,Redirection,Resource temporarily under different URI
+303,See Other,Redirection,Redirect to a different URI using GET
+304,Not Modified,Redirection,Resource not modified since last request
+307,Temporary Redirect,Redirection,Temporary redirect preserving method
+308,Permanent Redirect,Redirection,Permanent redirect preserving method
+400,Bad Request,Client Error,Server could not understand request
+401,Unauthorized,Client Error,Authentication required or failed
+402,Payment Required,Client Error,Reserved for future use
+403,Forbidden,Client Error,Server refuses to fulfill the request
+404,Not Found,Client Error,Requested resource not found
+405,Method Not Allowed,Client Error,HTTP method not supported for resource
+408,Request Timeout,Client Error,Client took too long to send request
+409,Conflict,Client Error,Request could not be processed due to conflict
+410,Gone,Client Error,Resource is no longer available
+411,Length Required,Client Error,Content-Length header is required
+413,Payload Too Large,Client Error,Request entity too large
+418,I'm a teapot,Client Error,April Fools' RFC joke (unused)
+429,Too Many Requests,Client Error,Rate limiting in effect
+500,Internal Server Error,Server Error,Generic server error
+501,Not Implemented,Server Error,Server does not support requested functionality
+502,Bad Gateway,Server Error,Invalid response from upstream server
+503,Service Unavailable,Server Error,Server cannot handle request (overloaded/maintenance)
+504,Gateway Timeout,Server Error,Upstream server timed out
+505,HTTP Version Not Supported,Server Error,HTTP version not supported by server
+506,Variant Also Negotiates,Server Error,Transparent content negotiation led to an internal server configuration issue
+507,Insufficient Storage,Server Error,Server is unable to store the representation needed to complete the request (WebDAV)
+508,Loop Detected,Server Error,Server detected an infinite loop while processing the request (WebDAV)
+510,Not Extended,Server Error,Further extensions to the request are required for the server to fulfill it
+511,Network Authentication Required,Server Error,Client needs to authenticate to gain network access (e.g., captive portal)

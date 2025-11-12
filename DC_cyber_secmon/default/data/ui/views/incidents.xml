@@ -8,6 +8,8 @@
   <!-- Row 4: Incident Assignment Summary -->
   <!-- Row 5: Recent Activity -->
   <!-- Row: Create New Incident from Notable Alert -->
+  <!-- Row: Create New Incident from Notable Alert -->
+  <!-- Row: Update Existing Incident -->
   <fieldset submitButton="true" autoRun="true">
     <input type="dropdown" token="status_filter">
       <label>Status</label>
@@ -165,7 +167,7 @@
   </row>
   <row>
     <panel>
-      <title>Incident Details</title>
+      <title>Incident Details - Clik on the Mitre Technique ID for Guidence - DONT PANIC!</title>
       <table>
         <search>
           <query>
@@ -178,8 +180,8 @@
 | sort - "Created"
           </query>
         </search>
-        <option name="drilldown">row</option>
         <option name="count">20</option>
+        <option name="drilldown">row</option>
         <option name="rowNumbers">true</option>
         <option name="wrap">true</option>
         <format type="color" field="Severity">
@@ -188,6 +190,9 @@
         <format type="color" field="Status">
           <colorPalette type="map">{"open":#D93F3C,"investigating":#F7BC38,"closed":#65A637}</colorPalette>
         </format>
+        <drilldown>
+          <link target="_blank">/app/DC_cyber_secmon/dont_panic?form.mitre_search=$click.value2$</link>
+        </drilldown>
       </table>
     </panel>
   </row>
@@ -237,31 +242,27 @@
         </format>
       </table>
     </panel>
-    
   </row>
-  <!-- Row: Create New Incident from Notable Alert -->
   <row>
     <panel>
       <title>Create New Incident from Notable Alert</title>
       <html>
-        <p><strong>Instructions:</strong> Select a notable alert below to create an incident. The form will auto-populate with alert details.</p>
+        <p>
+          <strong>Instructions:</strong> Select a notable alert below to create an incident. The form will auto-populate with alert details.</p>
       </html>
     </panel>
   </row>
-  
   <row>
     <panel>
       <title>Select Notable Alert</title>
       <input type="dropdown" token="selected_alert_id" searchWhenChanged="true">
         <label>Select Alert to Create Incident</label>
         <search>
-          <query>
-index=notable earliest=-24h latest=now
+          <query>index=notable earliest=-48h latest=now
 | dedup alert_id, src_entity
 | eval display_label=alert_id . " - " . alert_name . " (" . src_entity . ") - " . strftime(_time, "%Y-%m-%d %H:%M")
 | table alert_id, alert_name, severity, src_entity, mitre_technique_id, mitre_tactic, data_source, additional_context, display_label, _time
-| sort - _time
-          </query>
+| sort - _time</query>
           <earliest>-24h</earliest>
           <latest>now</latest>
         </search>
@@ -271,28 +272,25 @@ index=notable earliest=-24h latest=now
       </input>
     </panel>
   </row>
-  
   <row depends="$selected_alert_id$">
     <panel>
       <title>Alert Details</title>
       <table>
         <search>
-          <query>
-index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
+          <query>index=notable earliest=-48h latest=now alert_id="$selected_alert_id$"
 | head 1
 | eval created_time=strftime(_time, "%Y-%m-%d %H:%M:%S")
 | table alert_id, alert_name, severity, src_entity, process_info, target_info, mitre_technique_id, mitre_tactic, data_source, additional_context, created_time
-| rename alert_id as "Alert ID", alert_name as "Alert Name", severity as "Severity", src_entity as "Source Entity", process_info as "Process Info", target_info as "Target Info", mitre_technique_id as "MITRE Technique", mitre_tactic as "MITRE Tactic", data_source as "Data Source", additional_context as "Context", created_time as "Alert Time"
-          </query>
+| rename alert_id as "Alert ID", alert_name as "Alert Name", severity as "Severity", src_entity as "Source Entity", process_info as "Process Info", target_info as "Target Info", mitre_technique_id as "MITRE Technique", mitre_tactic as "MITRE Tactic", data_source as "Data Source", additional_context as "Context", created_time as "Alert Time"</query>
           <earliest>-24h</earliest>
           <latest>now</latest>
         </search>
         <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
         <option name="wrap">true</option>
       </table>
     </panel>
   </row>
-  
   <row depends="$selected_alert_id$">
     <panel>
       <title>Incident Creation Form</title>
@@ -300,7 +298,6 @@ index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
         <label>Incident Description</label>
         <default>Investigate alert: $selected_alert_id$</default>
       </input>
-      
       <input type="dropdown" token="incident_assigned_to">
         <label>Assign To</label>
         <search>
@@ -315,12 +312,10 @@ index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
         <fieldForValue>username</fieldForValue>
         <default>unassigned</default>
       </input>
-      
       <input type="text" token="incident_notes">
         <label>Initial Notes (Optional)</label>
         <default></default>
       </input>
-      
       <html>
         <div style="margin-top: 20px;">
           <button class="btn btn-primary" id="create_incident_btn">Create Incident</button>
@@ -330,16 +325,15 @@ index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
       </html>
     </panel>
   </row>
-<!-- Row: Update Existing Incident -->
   <row>
     <panel>
       <title>Update Existing Incident</title>
       <html>
-        <p><strong>Instructions:</strong> Enter the Incident ID, select new status and assignment, then click Update.</p>
+        <p>
+          <strong>Instructions:</strong> Enter the Incident ID, select new status and assignment, then click Update.</p>
       </html>
     </panel>
   </row>
-  
   <row>
     <panel>
       <title>Select Incident to Update</title>
@@ -359,7 +353,6 @@ index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
       </input>
     </panel>
   </row>
-  
   <row depends="$update_incident_id$">
     <panel>
       <title>Current Incident Details</title>
@@ -379,11 +372,9 @@ index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
       </table>
     </panel>
   </row>
-  
   <row depends="$update_incident_id$">
     <panel>
       <title>Update Incident Form</title>
-      
       <input type="dropdown" token="new_status">
         <label>New Status</label>
         <choice value="open">Open</choice>
@@ -391,7 +382,6 @@ index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
         <choice value="closed">Closed</choice>
         <default>investigating</default>
       </input>
-      
       <input type="dropdown" token="new_assigned_to">
         <label>Assign To</label>
         <search>
@@ -406,7 +396,6 @@ index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
         <fieldForValue>username</fieldForValue>
         <default>unassigned</default>
       </input>
-      
       <html>
         <div style="margin-top: 20px;">
           <button class="btn btn-warning" id="update_incident_btn">Update Incident</button>
@@ -414,17 +403,15 @@ index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
       </html>
     </panel>
   </row>
-
-<row>
+  <row>
     <panel>
       <title>Delete Existing Incident</title>
       <html>
         <p>⚠️ <strong>Warning:</strong> Select an Incident ID below and click Delete. This action is **irreversible**.</p>
       </html>
     </panel>
-</row>
-
-<row>
+  </row>
+  <row>
     <panel>
       <title>Select Incident to Delete</title>
       <input type="dropdown" token="delete_incident_id" searchWhenChanged="true">
@@ -442,9 +429,8 @@ index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
         <default></default>
       </input>
     </panel>
-</row>
-
-<row depends="$delete_incident_id$">
+  </row>
+  <row depends="$delete_incident_id$">
     <panel>
       <title>Confirm Delete</title>
       <html>
@@ -453,7 +439,5 @@ index=notable earliest=-24h latest=now alert_id="$selected_alert_id$"
         </div>
       </html>
     </panel>
-</row>
-
-
+  </row>
 </form>

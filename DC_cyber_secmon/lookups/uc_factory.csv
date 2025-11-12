@@ -1,0 +1,13 @@
+use_case_id,use_case_name,category,mitre_technique_id,mitre_tactic,status,priority,assigned_to,created_date,updated_date,target_date,prod_date,data_source,notes
+END_ALT-001,Suspicious Registry Modification via Direct Device Access,Endpoint,T1112,Defense Evasion,active,medium,Deepak.Chohan,2025-10-15,2025-10-20,2025-10-18,2025-10-20,Sysmon,Production - running daily
+IAM_ALT-001,Multiple Failed Logons,Identity,T1110,Credential Access,active,high,Deepak.Chohan,202510-16,2025-10-22,2025-10-20,2025-10-22,Office 365,Production - monitoring brute force
+END_ALT-003,Unauthorized Sudo Privilege Escalation,Endpoint,T1548.003,Privilege Escalation,active,high,Deepak.Chohan,2025-10-18,2025-10-25,2025-10-22,2025-10-25,Linux Secure Logs,Production - critical systems monitored
+NET_ALT-001,Exfiltration Over Web Service,Network,T1567,Exfiltration,active,high,Deepak.Chohan,2025-10-20,2025-10-28,2025-10-25,2025-10-28,Nginx Access Logs,Production - 0.1GB threshold
+WEB_ALT-001,SQL Injection Attack,Web,T1190,Initial Access,active,high,Deepak.Chohan,2025-11-01,2025-11-02,2025-11-05,2025-11-11,Nginx Access Logs,Testing phase - tuning thresholds
+WEB_ALT-002,Directory Enumeration Scanning,Web,T1046,Reconnaissance,in_development,medium,alex.brown,2025-11-02,2025-11-02,2025-11-08,,Nginx Access Logs,SPL development in progress
+END_ALT-002,Blocked Process Execution,Endpoint,T1059,Execution,active,medium,Deepak.Chohan,2025-10-22,2025-10-30,2025-11-03,2025-10-30,Sysmon,Approved - awaiting deployment
+NET_ALT-002,Suspicious DNS Queries,Network,T1071.004,Command and Control,in_development,high,john.smith,2025-10-28,2025-11-01,2025-11-10,,DNS Logs,Attack data being ingested
+IAM_ALT-002,Privilege Escalation Events,Identity,T1078,Defense Evasion,ideation,medium,jane.doe,2025-11-01,2025-11-01,2025-11-15,,Windows Security,Gathering requirements
+WEB_ALT-003,XSS Attack Detection,Web,T1059.007,Execution,ideation,low,alex.brown,2025-11-02,2025-11-02,2025-11-20,,Nginx Access Logs,Future enhancement
+END_ALT-004,PowerShell Encoded Commands,Endpoint,T1059.001,Execution,rejected,medium,mike.johnson,2025-10-10,2025-10-15,,,Sysmon,Too many false positives - need better approach
+NET_ALT-003,Port Scanning Detection,Network,T1046,Reconnaissance,retired,low,john.smith,2025-09-01,2025-10-01,2025-09-15,2025-09-20,Firewall Logs,Replaced by improved version

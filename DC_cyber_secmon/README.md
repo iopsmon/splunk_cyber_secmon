@@ -4,6 +4,8 @@
 
 The **Cyber Security Monitoring App** is a custom Splunk application designed for security detection development and threat analysis. It provides a focused workspace for security analysts and detection engineers to build, test, and validate security use cases based on real-world attack techniques.
 
+![Security Monitoring Dashboard](DC_cyber_secmon/static/secmon_dashboard.jpg)
+
 ---
 
 ## Purpose
@@ -26,6 +28,8 @@ This application serves as a **detection engineering platform** that:
 | 1.1.0 | Oct 2025 | Added Various Security Dashboards - Bug Fixes | Security Team |
 | 1.2.0 | Oct 2025 | Added New Dashboards  - Lookups | Security Team |
 | 1.3.0 | Nov 2025 | Documentation Updates, Incidents Dashboards, Nav Layout, New Lookups | Security Team |
+| 1.4.0 | Nov 2025 | Documentation Updates, Incidents Dashboards, Nav Layout, New Lookups | Security Team |
+| 1.5.0 | Nov 2025 | Documentation Updates, use Case Factory Dashboard, Nav Layout, New Lookups, New UC's | Security Team |
 
 
 ---
@@ -488,13 +492,9 @@ index=notable | stats count
 
 ### Planned Features
 - [ ] Alert triage workflow (status field: open/investigating/closed)
-- [ ] Automated response actions
 - [ ] Threat intelligence integration
-- [ ] Risk-based alerting and scoring
 - [ ] Alert correlation across multiple techniques
-- [ ] Custom MITRE ATT&CK navigator export
-- [ ] Scheduled email reports
-- [ ] Integration with ticketing systems (JIRA, ServiceNow)
+
 
 ### Detection Coverage Expansion
 - [ ] Network-based detections (NET category)
@@ -559,6 +559,15 @@ This is a custom application developed for internal use. For questions, suggesti
 - Dashboard Tuning
 
 
+### v1.4.0 -1.5.0 
+- Use Case Factory Dashboard
+- Documentation Updates
+- New Use Case 
+- Incident Mitre Guidance Dashboard
+- Lookups Dashboard Added   
+- New Lookups 
+
+
 ---
 
 ## License
@@ -567,6 +576,6 @@ This application is for internal use only. Attack data sourced from the Splunk A
 
 ---
 
-**Document Version:** 1.1
+**Document Version:** 1.2
 **Last Updated:** November 2025  
 **Author:** Security Engineering Team

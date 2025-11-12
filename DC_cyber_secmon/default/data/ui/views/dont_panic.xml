@@ -1,0 +1,60 @@
+<form version="1.1" theme="dark">
+  <label>DONT PANIC! MITRE ATT&amp;CK Post-Alert Guidance</label>
+  <description>Search MITRE ATT&amp;CK IDs and retrieve post-alert actions and remediation guidance from lookup</description>
+  <fieldset submitButton="false"></fieldset>
+  <row>
+    <panel>
+      <title>MITRE ATT&amp;CK Guidance Lookup</title>
+      <input type="text" token="mitre_search">
+        <label>Search MITRE ID (e.g., T1190, T1112)</label>
+        <prefix>mitre_id=</prefix>
+      </input>
+      <table>
+        <search>
+          <query>| inputlookup post_alert_actions.csv
+| search $mitre_search$
+| table mitre_id, technique_name, initial_action, investigation_and_remediation, d3fend_tactic</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="wrap">true</option>
+        <option name="drilldown">none</option>
+        <format type="color" field="investigation_and_remediation">
+  <colorPalette type="expression">"#65A637"</colorPalette>
+</format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Initial Action</title>
+      <single>
+        <search>
+          <query>| inputlookup iops_post_alert_actions
+| search $mitre_search$
+| fields initial_action
+| head 1</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </single>
+      
+    </panel>
+    <panel>
+      <title>D3FEND Tactic</title>
+      <single>
+        <search>
+          <query>| inputlookup iops_post_alert_actions
+| search $mitre_search$
+| fields d3fend_tactic
+| head 1</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+  </row>
+</form>

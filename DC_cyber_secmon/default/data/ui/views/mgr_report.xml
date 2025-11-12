@@ -23,8 +23,6 @@
       <single>
         <search>
           <query>| inputlookup security_incidents
-| eval created_epoch=created_time
-| where created_epoch &gt;= relative_time(now(), "$time_range.earliest$") AND created_epoch &lt;= relative_time(now(), "$time_range.latest$")
 | stats count</query>
           <earliest>$time_range.earliest$</earliest>
           <latest>$time_range.latest$</latest>
