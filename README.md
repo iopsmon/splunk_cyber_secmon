@@ -56,8 +56,10 @@ This project is documented across several markdown files, each covering a specif
 
 *   **Asset Configuration Guide**
     *   Explains how to configure the `assets.csv` lookup file, which is the source of truth for your IT asset inventory.
-   
+
 [IOPS Assets](DC_cyber_secmon/iops_assets.md)
+   
+
 ---
 
 This app is intended to complement enterprise security platforms by providing a dedicated environment for detection content development and validation.
