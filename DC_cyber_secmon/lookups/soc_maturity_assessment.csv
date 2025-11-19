@@ -1,19 +1,19 @@
-customer_name,assessment_date,category,question,status,weight,notes
-iOpsmon Limited ,2025-10-01,Foundation,Cyber Hygiene Completed,yes,10,Patching and hardening standards in place
-iOpsmon Limited ,2025-10-01,Foundation,Security Standards Followed (ISO/NIST/CIS),yes,10,Following NIST CSF framework
-iOpsmon Limited ,2025-10-01,Foundation,Asset Inventory Complete,yes,8,All assets documented in CMDB
-iOpsmon Limited ,2025-10-01,Planning,Risk Assessment Completed,yes,10,Annual risk assessment performed
-iOpsmon Limited ,2025-10-01,Planning,Threat Modelling Completed,no,10,Not yet started - HIGH PRIORITY
-iOpsmon Limited ,2025-10-01,Planning,Data Classification Completed,yes,8,Sensitive data identified
-iOpsmon Limited ,2025-10-01,Planning,Logging Strategy Defined,no,9,Need to define what to log - PRIORITY
-iOpsmon Limited ,2025-10-01,Governance,GDPR Guide Followed,yes,7,Privacy requirements documented
-iOpsmon Limited ,2025-10-01,Governance,Incident Response Plan Exists,yes,9,IR plan tested annually
-iOpsmon Limited ,2025-10-01,Governance,SOC Roles and Responsibilities Defined,no,8,Team structure unclear
-iOpsmon Limited ,2025-10-01,Technical,Security Baseline Monitoring Developed (Use Cases),no,10,No use cases defined yet - CRITICAL
-iOpsmon Limited ,2025-10-01,Technical,All Critical Data Sources Ingested,no,10,Only 40% of sources sending logs - CRITICAL
-iOpsmon Limited ,2025-10-01,Technical,Log Retention Policy Defined,yes,7,90 days for most logs
-iOpsmon Limited ,2025-10-01,Technical,SIEM Infrastructure Sized Correctly,yes,6,Capacity planning completed
-iOpsmon Limited ,2025-10-01,People,SOC Team Hired/Assigned,no,10,No dedicated SOC team yet - CRITICAL
-iOpsmon Limited ,2025-10-01,People,Splunk Skills Assessment Completed,no,8,Team needs training
-iOpsmon Limited ,2025-10-01,People,Runbooks and Playbooks Documented,no,7,No documentation exists
-iOpsmon Limited ,2025-10-01,People,On-Call Schedule Defined,no,6,No 24/7 coverage plan
+customer_name,assessment_date,category,question,status,weight,notes,effort_days,phase,risk_if_not_addressed
+iOpsmon Limited ,2025-10-01,Foundation,Cyber Hygiene Completed,yes,10,Patching and hardening standards in place,0,Completed,N/A - Already implemented
+iOpsmon Limited ,2025-10-01,Foundation,Security Standards Followed (ISO/NIST/CIS),yes,10,Following NIST CSF framework,0,Completed,N/A - Already implemented
+iOpsmon Limited ,2025-10-01,Foundation,Asset Inventory Complete,yes,8,All assets documented in CMDB,0,Completed,N/A - Already implemented
+iOpsmon Limited ,2025-10-01,Planning,Risk Assessment Completed,yes,10,Annual risk assessment performed,0,Completed,N/A - Already implemented
+iOpsmon Limited ,2025-10-01,Planning,Threat Modelling Completed,no,10,Not yet started - HIGH PRIORITY,30,Phase 2: Medium-term (3-6 months),Unable to anticipate and prepare for sophisticated attack vectors targeting the organization
+iOpsmon Limited ,2025-10-01,Planning,Data Classification Completed,yes,8,Sensitive data identified,0,Completed,N/A - Already implemented
+iOpsmon Limited ,2025-10-01,Planning,Logging Strategy Defined,no,9,Need to define what to log - PRIORITY,10,Phase 1: Quick Wins (0-3 months),Critical security events may not be captured leading to blind spots in threat detection
+iOpsmon Limited ,2025-10-01,Governance,GDPR Guide Followed,yes,7,Privacy requirements documented,0,Completed,N/A - Already implemented
+iOpsmon Limited ,2025-10-01,Governance,Incident Response Plan Exists,yes,9,IR plan tested annually,0,Completed,N/A - Already implemented
+iOpsmon Limited ,2025-10-01,Governance,SOC Roles and Responsibilities Defined,no,8,Team structure unclear,5,Phase 1: Quick Wins (0-3 months),Delayed incident response and unclear accountability during security events
+iOpsmon Limited ,2025-10-01,Technical,Security Baseline Monitoring Developed (Use Cases),no,10,No use cases defined yet - CRITICAL,45,Phase 2: Medium-term (3-6 months),Unable to detect common attack patterns and security threats in real-time
+iOpsmon Limited ,2025-10-01,Technical,All Critical Data Sources Ingested,no,10,Only 40% of sources sending logs - CRITICAL,60,Phase 3: Long-term (6-12 months),Significant visibility gaps across the environment limiting threat detection capability
+iOpsmon Limited ,2025-10-01,Technical,Log Retention Policy Defined,yes,7,90 days for most logs,0,Completed,N/A - Already implemented
+iOpsmon Limited ,2025-10-01,Technical,SIEM Infrastructure Sized Correctly,yes,6,Capacity planning completed,0,Completed,N/A - Already implemented
+iOpsmon Limited ,2025-10-01,People,SOC Team Hired/Assigned,no,10,No dedicated SOC team yet - CRITICAL,90,Phase 3: Long-term (6-12 months),No dedicated resources to monitor and respond to security incidents 24/7
+iOpsmon Limited ,2025-10-01,People,Splunk Skills Assessment Completed,no,8,Team needs training,15,Phase 1: Quick Wins (0-3 months),Ineffective use of SIEM capabilities and delayed incident response
+iOpsmon Limited ,2025-10-01,People,Runbooks and Playbooks Documented,no,7,No documentation exists,20,Phase 2: Medium-term (3-6 months),Inconsistent incident response and increased mean time to resolution
+iOpsmon Limited ,2025-10-01,People,On-Call Schedule Defined,no,6,No 24/7 coverage plan,3,Phase 1: Quick Wins (0-3 months),Delayed response to after-hours security incidents

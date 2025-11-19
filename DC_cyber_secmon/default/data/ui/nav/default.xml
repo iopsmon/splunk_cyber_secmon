@@ -23,6 +23,7 @@
  <view name="sec_app_analytics"/>
  <view name="hosts_report"/>
  <view name="soc_maturity"/>
+ <view name="sourcetypes_analysis"/>
 </collection>
 
 <collection label="Search">
