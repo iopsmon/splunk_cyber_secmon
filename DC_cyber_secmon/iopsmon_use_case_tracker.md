@@ -56,6 +56,7 @@ Contains key security alerts
 | END_ALT-003 | User account has Logged in as root Endpoint | High| T1548.003 | Active | Oct 2025 |
 | IAM_ALT-001 | Multiple Failed Logons | Identity & Access | Medium | T1110 | Active | Oct 2025 |
 | NET_ALT-001 | Exfiltration Over Web Service | Web Service| High | T1567 | Active | Oct 2025 |
+| NET_ALT-002 | AWS Network Port Service Discovery Horizontal | Network | High | T1046 | Active | Nov 2025 |
 | WEB_ALT-001 | SQL Injection Attack| Web | High | T1190 | Active | Nov 2025 |
 
 ---
@@ -1015,10 +1016,166 @@ earliest=-24h latest=now\
 4. **Escalate if:** This was not legitimate 
 
 
+### NET_ALT-002: AWS Network Port Service Discovery Horizontal
+
+#### Overview
+**Status:** ✅ Active  
+**Category:** Network (NET)  
+**MITRE ATT&CK:** T1046 - Network Service Discovery  
+**Tactic:** Discovery  
+**Severity:** High  
+**Data Source:** AWS VPC Flow Logs (`aws:cloudwatchlogs:vpcflow`)
+
+#### Description
+Detects a potential network scan where a single source IP attempts to connect to a large number of different ports on a single destination host within your AWS environment. This behavior is indicative of a horizontal port scan, often performed by attackers using tools like Nmap to discover open services for exploitation. This rule aggregates VPC flow logs over a 10-minute window and triggers an alert if more than 20 distinct destination ports are accessed.
+
+#### Attack Data Ingestion
+```bash
+# Pull the dataset from Splunk Attack Data repository
+git lfs pull --include="datasets/attack_techniques/T1046/"
+
+# Push Data: This pushes data as JSON to HEC.
+# Note: The specified YAML file was edited to work correctly.
+python3 bin/replay.py datasets/attack_techniques/T1046/nmap/nmap_old.yml
+
+# Run the bash script to update the epoch time in the log files
+# cd /Volumes/SANSSD2TB/DEV/CYBER_SEC/SPLUNK_ATTACK_DATA/attack_data/datasets/attack_techniques/T1046/nmap 
+# ./dc_change_time_horizontal_log.sh
+# ./dc_change_time_vertical_log.sh
+
+# Target index: attack_data
+# Sourcetype: aws:cloudwatchlogs:vpcflow
+```
+
+#### Detection Logic (SPL)
+```spl
+index=attack_data sourcetype="aws:cloudwatchlogs:vpcflow" source="aws:cloudwatchlogs:vpcflow:vertical.log" earliest=-1h@h latest=now
+```The below macro filter is for internal private ranges - commented out for testing```
+```| where `filter_private_src_ips```
+```scanning vertical logs one host for many ports```
+| fields _indextime,_raw,sourcetype,source,_time,account_id,action,vpcflow_action,app,aws_account_id,bytes,dest,dest_ip,dest_port,src_ip, src_port,duration,dvc,end_time,packets, interface_id, protocol vendor_product, transport
+```10 minute window```
+| bucket _time span=10m
+```Aggregate Data```
+| stats 
+   count as request_count,
+    dc(dest_port) as distinct_ports_scanned,
+    values(dest_port) as ports_scanned,
+    values(action) as actions,
+    values(aws_account_id) as aws_account_id,
+    min(_time) as first_seen,
+    max(_time) as last_seen
+    by _time, src_ip, dest_ip
+    ```Scanning for more ports than 20 - can be tweaked```
+| where distinct_ports_scanned > 20
+```Alert Enrichment And Normalization```
+| eval alert_name="AWS Network Port Service Discovery Horizontal"
+| eval suspicious_reason = src_ip . " performed a network scan " . "Total Ports Scanned " . distinct_ports_scanned . " Account ID " . aws_account_id 
+| eval alert_time = strftime(first_seen, "%Y-%m-%d %H:%M:%S")
+| eval event_time = strftime(first_seen, "%Y-%m-%d %H:%M:%S")
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity
+```Field Normalization for Dashboards```
+| eval src_entity = src_ip
+| eval process_info = "Nmap Scanning|Script" 
+| eval target_info = dest_ip
+| eval additional_context = suspicious_reason
+| table alert_time, alert_id, alert_name, event_time, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source,request_count
+| collect index=notable
+```
+
+#### Alert Configuration (`savedsearches.conf`)
+```ini
+[NET_ALT-002]
+[NET_ALT-002]
+action.email.use_ssl = 0
+action.webhook.enable_allowlist = 0
+alert.expires = 1h
+alert.suppress = 1
+alert.suppress.period = 60h
+alert.track = 1
+counttype = number of events
+cron_schedule = */7 * * * *
+description = AWS Network Port Service Discovery Horiontal
+disabled = 1
+dispatch.earliest_time = -24h@h
+dispatch.latest_time = now
+display.events.fields = ["host","source","sourcetype","sudo_user","dvc","COMMAND","USER","process","user_name","original_user","uri_path","uri_query","web_method","url","vocab_only","type","msg","general_name","site","password","dest_ip","dest_port","file","page","id","user","username","user_agent","status"]
+display.events.maxLines = 20
+display.general.type = statistics
+display.page.search.tab = statistics
+enableSched = 1
+quantity = 0
+relation = greater than
+request.ui_dispatch_app = DC_cyber_secmon
+request.ui_dispatch_view = search
+search = index=attack_data sourcetype="aws:cloudwatchlogs:vpcflow" source="aws:cloudwatchlogs:vpcflow:vertical.log" earliest=-1h@h latest=now\
+\
+```The below macro filter is for internal private ranges - commented out for testing```\
+```| where `filter_private_src_ips```\
+```scanning vertical logs one host for many ports```\
+| fields _indextime,_raw,sourcetype,source,_time,account_id,action,vpcflow_action,app,aws_account_id,bytes,dest,dest_ip,dest_port,src_ip, src_port,duration,dvc,end_time,packets, interface_id, protocol vendor_product, transport\
+``` interesting fields src_ip|action|dest,|dest_ip,|dest_port|aws_account_id```\
+```10 minute window```\
+| bucket _time span=10m\
+```comment  Aggregate Data ```\
+| stats \
+   count as request_count,\
+    dc(dest_port) as distinct_ports_scanned,\
+    values(dest_port) as ports_scanned,\
+    values(action) as actions,\
+    values(aws_account_id) as aws_account_id,\
+    min(_time) as first_seen,\
+    max(_time) as last_seen\
+    by _time, src_ip, dest_ip\
+    ```Scanning for more ports than 20 - can be tweaked```\
+| where distinct_ports_scanned > 20\
+```comment  Alert Enrichment And  Normalization ```\
+| eval alert_name="AWS Network Port Service Discovery Horiontal"\
+| eval suspicious_reason = src_ip . " performed a network scan " . "Total Ports Scanned " . distinct_ports_scanned . " Account ID " . aws_account_id \
+| eval alert_time = strftime(first_seen, "%Y-%m-%d %H:%M:%S")\
+| eval event_time = strftime(first_seen, "%Y-%m-%d %H:%M:%S")\
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity\
+```comment Field Normalization for Dashboards ```\
+| eval src_entity = src_ip\
+| eval process_info = "Nmap Scanning|Script" \
+| eval target_info = dest_ip\
+| eval additional_context = suspicious_reason\
+| table alert_time, alert_id, alert_name, event_time, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source,request_count\
+| collect index=notable
 
 
+```
+
+#### Key Fields
+- **src_ip:** The source IP address performing the scan.
+- **dest_ip:** The target IP address being scanned.
+- **distinct_ports_scanned:** The count of unique destination ports contacted.
+- **ports_scanned:** The list of destination ports.
+- **aws_account_id:** The AWS account where the activity occurred.
+
+#### Detection Tuning
+- **Current Threshold:** `distinct_ports_scanned > 20`. This can be raised to reduce noise or lowered to increase sensitivity.
+- **False Positives:** Legitimate vulnerability scanners, monitoring tools, or certain applications might trigger this alert.
+- **Tuning Recommendations:**
+  - Whitelist known good IP addresses of scanners or monitoring tools: `src_ip NOT IN (scanner1_ip, scanner2_ip)`
+  - Consider using the `filter_private_src_ips` macro to exclude internal scanning activity if that is expected.
 
 #### Testing Notes
+- ✅ Verified detection fires on sample attack data from the `T1046/nmap` dataset.
+- ✅ Alert successfully writes to the `notable` index.
+- ✅ Dashboard visualization confirmed.
+- ⚠️ The `earliest` time should be set to a value appropriate for the cron schedule in production (e.g., `-10m`).
+
+#### Response Guidance
+1.  **Immediate Action:** Block the source IP address at the firewall or network ACLs. Alert SOC L2 for further investigation.
+2.  **Analysis:** Review firewall/VPC logs to determine the scope of the scan (ports, targets) and check for any successful connections. Correlate the source IP with other log sources to identify further malicious activity.
+3.  **Harden:** Review and tighten firewall/security group rules to minimize the external attack surface and restrict access to only necessary ports.
+
+
+
+
+
+#### IAM_ALT-001 Testing Notes
 - ✅ Verified detection fires on O365 brute force sample data
 - ✅ Alert successfully writes to `notable` index with normalized fields
 - ✅ Dashboard displays alerts with proper MITRE mapping
@@ -1073,6 +1230,7 @@ earliest=-24h latest=now\
    - IAM_ALT-001: Every 6 minutes (`*/6 * * * *`)
    - WEB_ALT-001: Every 10 minutes (`*/15 * * * *`)
    - NET_ALT-001: Every 10 minutes (`*/10 * * * *`)
+   - NET_ALT-002: Every 7 minutes (`*/7 * * * *`)
 
    - Recommendation: Stagger schedules to avoid concurrent searches
    - Monitor: Check `_internal` logs for search concurrency warnings
@@ -1084,6 +1242,7 @@ earliest=-24h latest=now\
    - IAM_ALT-001: 60 seconds
    - WEB_ALT-001: 30 minutes
    - NET_ALT-001: 60 seconds
+   - NET_ALT-002: 1 hour
 
    - Recommendation: Align suppression with schedule frequency to avoid duplicate alerts
 
@@ -1138,7 +1297,7 @@ Final output should be written to notable index:
 ### Planned Detections Examples 
 
 #### Network (NET) Category
-- NET_ALT-001: Large Data Exfiltration 
+- NET_ALT-001: Large Data Exfiltration - DONE
 - NET_ALT-002: Suspicious Outbound Network Connections
 - NET_ALT-003: Beaconing Activity Detection
 - NET_ALT-004: Tor/Proxy Network Usage
@@ -1151,7 +1310,7 @@ Final output should be written to notable index:
 - WEB_ALT-004: Web Shell Activity
 
 #### Additional Endpoint (END) Category
-- END_ALT-002: Suspicious PowerShell Execution - DONE
+- END_ALT-002: Blocked Process Execution Detected - DONE
 - END_ALT-003: Credential Dumping (LSASS Access)
 - END_ALT-004: Persistence via Startup Folder
 - END_ALT-005: DLL Injection Techniques
@@ -1257,6 +1416,7 @@ index=_internal source=*scheduler.log* status=continued
 | 1.2.0 | Oct 2025 | Added END_ALT-003 Unauthorised Sudo Privilege Escalation | Security Team |
 | 1.4.0 | Oct 2025 | Added NET_ALT-001 Large Data Exfiltration Security Team |
 | 1.5.0 | Oct 2025 | Added WEB_ALT-001 SQL Injection Attack | Security Team |
+| 1.6.0 | Nov 2025 | Added NET_ALT-002 AWS Network Port Service Discovery | Security Team |
 
 
 

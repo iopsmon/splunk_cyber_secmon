@@ -1,0 +1,45 @@
+<form version="1.1" theme="dark">
+  <label>Lookups</label>
+  <description>Shows Lookup Context</description>
+  <fieldset submitButton="false">
+    <input type="dropdown" token="lookup_def_name" searchWhenChanged="true">
+      <label>Lookup Name</label>
+      <choice value="iops_security_alerts_summary">Sec Alerts Config Lookup</choice>
+      <choice value="iops_mitre_id">Mitre ID Ref Lookup</choice>
+      <choice value="iops_win_exec_process">Windows Exec Process Lookup</choice>
+      <choice value="iops_linux_priv_users">Privilaged Users Lookup</choice>
+      <choice value="security_incidents">Security Incidents KV Lookup</choice>
+      <choice value="iops_win_exec_interesting_process">Windows Interesting Lookup</choice>
+      <choice value="iops_soc_users">Soc Users</choice>
+      <choice value="iops_assets">Assests</choice>
+      <choice value="iops_post_alert_actions">Post Alert Actions</choice>
+      <choice value="iops_http_status_codes">Http Status Codes</choice>
+      <choice value="iops_kali_tools">Kali Tools</choice>
+      <choice value="iops_uc_factory">Use Case Factory</choice>
+      <choice value="iops_soc_assessment">Soc Maturity Assessment</choice>
+      <choice value="iops_st_inv">Source Types Inventory</choice>
+      <default>iops_security_alerts_summary</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Lookups</title>
+      <table>
+        <search>
+          <query>| inputlookup $lookup_def_name$</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>

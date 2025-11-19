@@ -156,4 +156,204 @@
       </table>
     </panel>
   </row>
+  <!-- NEW SECTION: Project Delivery Impact -->
+  <row>
+    <panel>
+      <title>Project Delivery Impact - Overview</title>
+      <html>
+        <h3 style="color: #F8BE34; margin: 10px;">📊 Implementation Timeline &amp; Risk Assessment</h3>
+        <p style="margin: 10px;">Below panels show the estimated effort, phased roadmap, and risks associated with addressing current gaps.</p>
+      </html>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <single>
+        <title>Total Effort Required (Days)</title>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no"
+| stats sum(effort_days) as total_effort
+| eval total_effort=round(total_effort, 0)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="unit">days</option>
+        <option name="unitPosition">after</option>
+        <option name="underLabel">To address all gaps</option>
+      </single>
+    </panel>
+
+    <panel>
+      <single>
+        <title>Phase 1: Quick Wins</title>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no" AND phase="Phase 1: Quick Wins (0-3 months)"
+| stats sum(effort_days) as phase1_effort</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="unit">days</option>
+        <option name="unitPosition">after</option>
+        <option name="underLabel">0-3 months</option>
+        <option name="rangeColors">["0x53a051","0xF8BE34","0xca4b4b"]</option>
+        <option name="rangeValues">[0,30]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <single>
+        <title>Phase 2: Medium-term</title>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no" AND phase="Phase 2: Medium-term (3-6 months)"
+| stats sum(effort_days) as phase2_effort</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="unit">days</option>
+        <option name="unitPosition">after</option>
+        <option name="underLabel">3-6 months</option>
+        <option name="rangeColors">["0x53a051","0xF8BE34","0xca4b4b"]</option>
+        <option name="rangeValues">[0,60]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <single>
+        <title>Phase 3: Long-term</title>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no" AND phase="Phase 3: Long-term (6-12 months)"
+| stats sum(effort_days) as phase3_effort</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="unit">days</option>
+        <option name="unitPosition">after</option>
+        <option name="underLabel">6-12 months</option>
+        <option name="rangeColors">["0x53a051","0xF8BE34","0xca4b4b"]</option>
+        <option name="rangeValues">[0,100]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <chart>
+        <title>Implementation Roadmap - Gaps by Phase</title>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no"
+| stats count by phase
+| sort phase</query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.axisTitleX.text">Number of Gaps</option>
+        <option name="charting.axisTitleY.text">Implementation Phase</option>
+      </chart>
+    </panel>
+
+    <panel>
+      <chart>
+        <title>Effort Distribution by Category</title>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no"
+| stats sum(effort_days) as total_effort by category
+| sort - total_effort</query>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.chart.showPercent">true</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Phase 1: Quick Wins (0-3 months) - Detailed Roadmap</title>
+      <table>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no" AND phase="Phase 1: Quick Wins (0-3 months)"
+| sort - weight
+| rename category as "Category", question as "Task", effort_days as "Effort (Days)", weight as "Priority", risk_if_not_addressed as "Risk if Not Addressed"
+| table "Category", "Task", "Effort (Days)", "Priority", "Risk if Not Addressed"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="Priority">
+          <colorPalette type="map">{"10": "#DC4E41", "9": "#F8BE34", "8": "#F8BE34"}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Phase 2: Medium-term (3-6 months) - Detailed Roadmap</title>
+      <table>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no" AND phase="Phase 2: Medium-term (3-6 months)"
+| sort - weight
+| rename category as "Category", question as "Task", effort_days as "Effort (Days)", weight as "Priority", risk_if_not_addressed as "Risk if Not Addressed"
+| table "Category", "Task", "Effort (Days)", "Priority", "Risk if Not Addressed"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="Priority">
+          <colorPalette type="map">{"10": "#DC4E41", "9": "#F8BE34", "8": "#F8BE34"}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Phase 3: Long-term (6-12 months) - Detailed Roadmap</title>
+      <table>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no" AND phase="Phase 3: Long-term (6-12 months)"
+| sort - weight
+| rename category as "Category", question as "Task", effort_days as "Effort (Days)", weight as "Priority", risk_if_not_addressed as "Risk if Not Addressed"
+| table "Category", "Task", "Effort (Days)", "Priority", "Risk if Not Addressed"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="Priority">
+          <colorPalette type="map">{"10": "#DC4E41", "9": "#F8BE34", "8": "#F8BE34"}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>🚨 Critical Risks - High Priority Items Not Yet Addressed</title>
+      <table>
+        <search base="assessmentBaseSearch">
+          <query>
+| where status="no" AND weight &gt;= 9
+| sort - weight
+| rename category as "Category", question as "Gap", weight as "Priority", phase as "Recommended Phase", risk_if_not_addressed as "Risk Impact"
+| table "Category", "Gap", "Priority", "Recommended Phase", "Risk Impact"</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="color" field="Priority">
+          <colorPalette type="map">{"10": "#DC4E41", "9": "#F8BE34"}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <!-- END: Project Delivery Impact Section -->
 </dashboard>
