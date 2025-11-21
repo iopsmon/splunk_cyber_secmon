@@ -58,6 +58,7 @@ Contains key security alerts
 | NET_ALT-001 | Exfiltration Over Web Service | Web Service| High | T1567 | Active | Oct 2025 |
 | NET_ALT-002 | AWS Network Port Service Discovery Horizontal | Network | High | T1046 | Active | Nov 2025 |
 | WEB_ALT-001 | SQL Injection Attack| Web | High | T1190 | Active | Nov 2025 |
+| END_ALT-004 | Suspicious Scheduled Task Creation | Endpoint | High | T1053.005 | Active | Nov 2025 |
 
 ---
 
@@ -519,6 +520,140 @@ search = index=linux sourcetype=linux_secure source="/var/log/secure" (process="
 2. **Review allowed processes :** Determine what is authorised and not - check policy - RBAC
 3. **Examine timeline:** Look for related suspicious activity before/after
 5. **Escalate if:** Not authorised
+
+
+
+
+### END_ALT-004: Suspicious Scheduled Task Creation
+
+#### Overview
+**Status:** ✅ Active
+**Category:** Endpoint (END)
+**MITRE ATT&CK:** T1053.005 - Scheduled Task/Job: Scheduled Task
+**Tactic:** Persistence, Privilege Escalation, Execution
+**Severity:** High
+**Data Source:** Sysmon EventCode 1
+
+#### Description
+Detects the creation of a scheduled task using `schtasks.exe` with parameters that are commonly associated with malicious activity. This includes tasks that execute `cmd.exe` or `powershell.exe`, tasks configured to run at logon or startup for persistence, or tasks that run with elevated `SYSTEM` privileges. The detection also filters for tasks created by non-privileged accounts, which can be an indicator of unauthorized activity.
+
+#### Attack Data Ingestion
+```bash
+# Pull the dataset from Splunk Attack Data repository
+git lfs pull --include="datasets/attack_techniques/T1053.005/atomic_red_team/windows-sysmon.log"
+
+## Push Data: This pushes data as JSON to HEC
+python3 bin/replay.py datasets/attack_techniques/T1053.005/atomic_red_team/atomic_red_team.yml
+
+# Ingest via manual upload or replay script
+# Target index: attack_data
+# Sourcetype: XmlWinEventLog:Microsoft-Windows-Sysmon/Operational
+```
+
+#### Detection Logic (SPL)
+```spl
+index=attack_data sourcetype=XmlWinEventLog  source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventID=1 Image="*schtasks.exe"CommandLine="*/create*"
+earliest=0 latest=now
+| where (like(CommandLine, "%cmd.exe%") OR like(CommandLine, "%powershell%") OR like(CommandLine, "%onlogon%") OR like(CommandLine, "%onstart%") OR like(CommandLine, "%/ru system%") OR like(CommandLine, "%/S %"))
+| eval task_name=case(
+    match(CommandLine, "/tn\s+\"([^\"]+)\""), replace(CommandLine, "(?i).*\/tn\s+\"([^\"]+)\".*", "\1"),
+    match(CommandLine, "/tn\s+(\S+)"), replace(CommandLine, "(?i).*\/tn\s+(\S+).*", "\1"),
+    1=1, "Unknown"
+)
+```Lookup for any Windows Priv accounts ```
+| lookup iops_win_priv_acccounts account as User OUTPUT account_type
+| where isnull(account_type)
+| eval alert_name="Suspicious Scheduled Task Creation"
+| eval suspicious_reason="Scheduled task created via schtasks.exe with suspicious parameters (cmd/powershell execution, system privileges, or remote execution). Task Name: " + task_name
+| eval alert_time=strftime(_time, "%d-%m-%Y %H:%M:%S")
+| eval _time=strftime(_time, "%d-%m-%Y %H:%M:%S")
+| eval event_time=_time
+```Lookup alert details```
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity
+| eval src_entity=coalesce(Computer, host)
+| eval process_info=coalesce(ParentImage + " -> " + Image + " | " + CommandLine, "N/A")
+| eval target_info=coalesce("Task: " + task_name + " | User: " + User, "N/A")
+| eval additional_context=suspicious_reason
+| table _time, alert_id, alert_name, event_time, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source
+| collect index=notable
+```
+
+#### Alert Configuration (`savedsearches.conf`)
+```ini
+[END_ALT-004]
+action.webhook.enable_allowlist = 0
+alert.expires = 1h
+alert.suppress = 0
+alert.track = 1
+counttype = number of events
+cron_schedule = */7 * * * *
+description = Windows Suspicious Scheduled Task Creation
+disabled = 1
+dispatch.earliest_time = -24h@h
+dispatch.latest_time = now
+display.events.fields = ["host","source","sourcetype","sudo_user","dvc","COMMAND","USER","process","user_name","original_user","uri_path","uri_query","web_method","url","vocab_only","type","msg","general_name","site","password","dest_ip","dest_port","file","page","id","user","username","user_agent","status"]
+display.events.maxLines = 20
+display.general.type = statistics
+display.page.search.tab = statistics
+enableSched = 1
+quantity = 0
+relation = greater than
+request.ui_dispatch_app = DC_cyber_secmon
+request.ui_dispatch_view = search
+search = index=attack_data sourcetype=XmlWinEventLog  source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventID=1 Image="*schtasks.exe"CommandLine="*/create*"\
+earliest=0 latest=now\
+| where (like(CommandLine, "%cmd.exe%") OR like(CommandLine, "%powershell%") OR like(CommandLine, "%onlogon%") OR like(CommandLine, "%onstart%") OR like(CommandLine, "%/ru system%") OR like(CommandLine, "%/S %"))\
+| eval task_name=case(\
+    match(CommandLine, "/tn\s+\"([^\"]+)\""), replace(CommandLine, "(?i).*\/tn\s+\"([^\"]+)\".*", "\1"),\
+    match(CommandLine, "/tn\s+(\S+)"), replace(CommandLine, "(?i).*\/tn\s+(\S+).*", "\1"),\
+    1=1, "Unknown"\
+)\
+```Lookup for any Windows Priv accounts ```\
+| lookup iops_win_priv_acccounts account as User OUTPUT account_type\
+| where isnull(account_type)\
+| eval alert_name="Suspicious Scheduled Task Creation"\
+| eval suspicious_reason="Scheduled task created via schtasks.exe with suspicious parameters (cmd/powershell execution, system privileges, or remote execution). Task Name: " + task_name\
+| eval alert_time=strftime(_time, "%d-%m-%Y %H:%M:%S")\
+| eval _time=strftime(_time, "%d-%m-%Y %H:%M:%S")\
+| eval event_time=_time\
+```Lookup alert details```\
+| lookup iops_security_alerts_summary alert_name OUTPUT alert_id, data_source, mitre_tactic, mitre_technique_id, mitre_technique_name, severity\
+| eval src_entity=coalesce(Computer, host)\
+| eval process_info=coalesce(ParentImage + " -> " + Image + " | " + CommandLine, "N/A")\
+| eval target_info=coalesce("Task: " + task_name + " | User: " + User, "N/A")\
+| eval additional_context=suspicious_reason\
+| table _time, alert_id, alert_name, event_time, severity, src_entity, process_info, target_info, additional_context, mitre_technique_id, mitre_tactic, data_source\
+| collect index=notable
+
+```
+
+#### Key Fields
+- **EventID:** 1 (Process Creation)
+- **Image:** `*schtasks.exe`
+- **CommandLine:** The full command line used to create the task.
+- **ParentImage:** The process that spawned `schtasks.exe`.
+- **User:** The user account that created the task.
+
+#### Detection Tuning
+- **False Positives:** Legitimate software deployment tools, administrative scripts, or system management solutions might create scheduled tasks that trigger this alert.
+- **Tuning Recommendations:**
+  - **Whitelist Parent Processes:** Add `ParentImage NOT IN ("C:\\Program Files\\SCCM\\ccmexec.exe", ...)` to exclude tasks created by legitimate management tools.
+  - **Whitelist Task Names:** If certain task names are known to be safe, you can add `task_name NOT IN ("Known Good Task")`.
+  - **Refine User Lookup:** Ensure the `iops_win_priv_acccounts` lookup is comprehensive to correctly filter out tasks created by authorized administrators.
+
+#### Testing Notes
+- ✅ Verified detection fires on sample attack data for T1053.005.
+- ✅ Alert successfully writes to the `notable` index with correct normalization.
+- ✅ Dashboard visualization confirmed.
+- ⚠️ Schedule set to `*/7 * * * *` to avoid concurrency with other alerts.
+- ⚠️ Search period should be aligned with the cron schedule (e.g., `-10m`) in production.
+
+#### Response Guidance
+1.  **Isolate the host:** Prevent potential lateral movement or further malicious activity.
+2.  **Examine the task:** On the affected host, use Task Scheduler or `schtasks /query` to inspect the properties of the created task (`task_name`). Pay close attention to the action (what it runs), the trigger, and the user context.
+3.  **Investigate the parent process:** Analyze the `ParentImage`. Was `schtasks.exe` run from an interactive command prompt, a script, or another suspicious process?
+4.  **Review associated artifacts:** If the task runs a script or executable, retrieve and analyze that file.
+5.  **Remediate:** Delete the malicious scheduled task and any associated files. Review the system for other persistence mechanisms.
 
 
 
@@ -1086,7 +1221,6 @@ index=attack_data sourcetype="aws:cloudwatchlogs:vpcflow" source="aws:cloudwatch
 #### Alert Configuration (`savedsearches.conf`)
 ```ini
 [NET_ALT-002]
-[NET_ALT-002]
 action.email.use_ssl = 0
 action.webhook.enable_allowlist = 0
 alert.expires = 1h
@@ -1417,7 +1551,7 @@ index=_internal source=*scheduler.log* status=continued
 | 1.4.0 | Oct 2025 | Added NET_ALT-001 Large Data Exfiltration Security Team |
 | 1.5.0 | Oct 2025 | Added WEB_ALT-001 SQL Injection Attack | Security Team |
 | 1.6.0 | Nov 2025 | Added NET_ALT-002 AWS Network Port Service Discovery | Security Team |
-
+| 1.7.0 | Nov 2025 | Added END_ALT-004 Suspicious Scheduled Task Creation | Security Team |
 
 
 ---

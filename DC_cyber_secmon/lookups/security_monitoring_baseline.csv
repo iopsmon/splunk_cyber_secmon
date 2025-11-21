@@ -1,0 +1,52 @@
+baseline_id,category,monitoring_requirement,data_sources_needed,priority,compliance_frameworks,mitre_tactics,covered
+BL-END-001,Endpoint,Monitor all Windows servers for Security Event Logs including logon/logoff events,Windows Security Logs (Event IDs 4624/4625/4634/4647),Critical,PCI-DSS|ISO27001|SOC2,Initial Access|Credential Access,No
+BL-END-002,Endpoint,Monitor all Linux servers for authentication attempts and privilege escalation,Linux Secure Logs|Auth Logs|Sudo Logs,Critical,PCI-DSS|ISO27001|SOC2,Initial Access|Privilege Escalation,No
+BL-END-003,Endpoint,Monitor process creation and command-line execution on critical systems,Sysmon Event ID 1|EDR Telemetry,High,ISO27001|NIST,Execution|Defense Evasion,No
+BL-END-004,Endpoint,Monitor registry modifications on Windows endpoints,Sysmon Event ID 12/13/14|Windows Security,High,ISO27001,Defense Evasion|Persistence,No
+BL-END-005,Endpoint,Monitor scheduled task and cron job creation,Sysmon|Windows Security Event ID 4698|Linux Cron Logs,High,ISO27001|NIST,Persistence|Execution,No
+BL-END-006,Endpoint,Monitor service creation and modification,Windows Security Event ID 4697|7045|Sysmon Event ID 19,High,PCI-DSS|ISO27001,Persistence|Privilege Escalation,No
+BL-END-007,Endpoint,Monitor PowerShell script execution and logging,PowerShell Operational Logs Event ID 4103/4104,High,NIST|ISO27001,Execution|Defense Evasion,No
+BL-END-008,Endpoint,Monitor file integrity on critical system directories,File Integrity Monitoring|Sysmon Event ID 11,Critical,PCI-DSS|ISO27001,Defense Evasion|Impact,No
+BL-END-009,Endpoint,Monitor antivirus and endpoint protection alerts,EDR/AV Logs|Windows Defender Logs,Critical,PCI-DSS|ISO27001|SOC2,Defense Evasion|Execution,No
+BL-END-010,Endpoint,Monitor removable media usage and USB device connections,Sysmon Event ID 20/21|Windows Security,Medium,ISO27001|GDPR,Exfiltration|Initial Access,No
+BL-IAM-001,IAM,Monitor Active Directory user account creation and modification,Windows Security Event ID 4720/4722/4738,Critical,PCI-DSS|ISO27001|SOC2,Persistence|Privilege Escalation,No
+BL-IAM-002,IAM,Monitor privileged group membership changes (Domain Admins),Windows Security Event ID 4728/4732/4756,Critical,PCI-DSS|ISO27001|SOC2,Privilege Escalation|Persistence,No
+BL-IAM-003,IAM,Monitor failed authentication attempts across all systems,Windows Security Event ID 4625|Linux Auth Logs|Application Logs,Critical,PCI-DSS|ISO27001|SOC2,Credential Access|Initial Access,No
+BL-IAM-004,IAM,Monitor password changes and resets,Windows Security Event ID 4723/4724|Linux Secure Logs,High,PCI-DSS|ISO27001|GDPR,Credential Access|Persistence,No
+BL-IAM-005,IAM,Monitor account lockouts and unlocks,Windows Security Event ID 4740/4767,High,PCI-DSS|ISO27001,Credential Access,No
+BL-IAM-006,IAM,Monitor privileged account usage and sudo commands,Linux Secure Logs|Windows Security,Critical,PCI-DSS|ISO27001|SOC2,Privilege Escalation|Execution,No
+BL-IAM-007,IAM,Monitor Kerberos ticket requests and authentication,Windows Security Event ID 4768/4769/4771,High,ISO27001|NIST,Credential Access|Lateral Movement,No
+BL-IAM-008,IAM,Monitor interactive logons to servers,Windows Security Event ID 4624 (Type 2/10)|Linux Auth Logs,High,PCI-DSS|ISO27001,Initial Access|Lateral Movement,No
+BL-NET-001,Network,Monitor firewall deny logs and blocked connections,Firewall Logs|IPS/IDS Logs,High,PCI-DSS|ISO27001,Initial Access|Command and Control,No
+BL-NET-002,Network,Monitor network traffic to known malicious IPs and domains,Firewall Logs|Proxy Logs|DNS Logs|Threat Intelligence Feeds,Critical,ISO27001|NIST,Command and Control|Exfiltration,No
+BL-NET-003,Network,Monitor outbound connections on non-standard ports,Firewall Logs|NetFlow|Proxy Logs,High,PCI-DSS|ISO27001,Command and Control|Exfiltration,No
+BL-NET-004,Network,Monitor VPN connections and remote access,VPN Logs|SSL VPN Logs|Remote Desktop Logs,Critical,PCI-DSS|ISO27001|SOC2,Initial Access,No
+BL-NET-005,Network,Monitor DNS queries for suspicious domains and DGA activity,DNS Logs|Passive DNS,High,ISO27001|NIST,Command and Control,No
+BL-NET-006,Network,Monitor network scans and port scanning activity,IDS/IPS Logs|NetFlow|Firewall Logs,High,PCI-DSS|ISO27001,Discovery|Reconnaissance,No
+BL-NET-007,Network,Monitor large data transfers and bandwidth anomalies,NetFlow|Firewall Logs|Proxy Logs,High,GDPR|ISO27001,Exfiltration,No
+BL-NET-008,Network,Monitor lateral movement and internal reconnaissance,NetFlow|Windows Security Event ID 4648|SMB Logs,High,ISO27001|NIST,Lateral Movement|Discovery,No
+BL-WEB-001,Application,Monitor web application logs for SQL injection attempts,Web Application Logs|WAF Logs,Critical,PCI-DSS|ISO27001|OWASP,Initial Access,No
+BL-WEB-002,Application,Monitor web application authentication failures,Web Application Logs|Access Logs,High,PCI-DSS|ISO27001|SOC2,Credential Access|Initial Access,No
+BL-WEB-003,Application,Monitor web application for XSS and code injection,WAF Logs|Application Logs,High,PCI-DSS|ISO27001|OWASP,Initial Access|Execution,No
+BL-WEB-004,Application,Monitor API authentication and authorization failures,API Gateway Logs|Application Logs,High,ISO27001|SOC2,Initial Access|Credential Access,No
+BL-WEB-005,Application,Monitor file upload activities on web applications,Web Application Logs|WAF Logs,High,ISO27001|OWASP,Initial Access|Execution,No
+BL-WEB-006,Application,Monitor admin portal access and privileged operations,Web Application Logs|Admin Logs,Critical,PCI-DSS|ISO27001|SOC2,Initial Access|Privilege Escalation,No
+BL-CLD-001,Cloud,Monitor AWS CloudTrail for IAM policy and role changes,AWS CloudTrail,Critical,ISO27001|SOC2|NIST,Privilege Escalation|Persistence,No
+BL-CLD-002,Cloud,Monitor AWS security group and network ACL modifications,AWS CloudTrail|VPC Flow Logs,Critical,PCI-DSS|ISO27001|SOC2,Defense Evasion|Initial Access,No
+BL-CLD-003,Cloud,Monitor AWS S3 bucket policy changes and public access,AWS CloudTrail|S3 Access Logs,Critical,GDPR|ISO27001|SOC2,Exfiltration|Initial Access,No
+BL-CLD-004,Cloud,Monitor Azure AD sign-in logs for suspicious activity,Azure AD Sign-in Logs|Audit Logs,Critical,ISO27001|SOC2,Initial Access|Credential Access,No
+BL-CLD-005,Cloud,Monitor cloud compute instance creation and termination,AWS CloudTrail|Azure Activity Logs|GCP Audit Logs,High,ISO27001|SOC2,Impact|Resource Development,No
+BL-CLD-006,Cloud,Monitor cloud storage access and data downloads,S3 Access Logs|Azure Blob Logs|GCS Audit Logs,High,GDPR|ISO27001,Exfiltration|Collection,No
+BL-CLD-007,Cloud,Monitor cloud key vault and secrets access,AWS KMS|Azure Key Vault|GCP Secret Manager Logs,Critical,PCI-DSS|ISO27001|SOC2,Credential Access,No
+BL-CLD-008,Cloud,Monitor cloud privilege escalation attempts,CloudTrail|Azure Activity Logs|GCP Audit Logs,Critical,ISO27001|SOC2|NIST,Privilege Escalation,No
+BL-DB-001,Database,Monitor database administrator account usage,Database Audit Logs|MSSQL/MySQL/Oracle Logs,Critical,PCI-DSS|ISO27001|SOC2,Privilege Escalation|Collection,No
+BL-DB-002,Database,Monitor database schema changes and DDL operations,Database Audit Logs,High,PCI-DSS|ISO27001|SOC2,Impact|Defense Evasion,No
+BL-DB-003,Database,Monitor sensitive data access queries,Database Audit Logs|Query Logs,Critical,PCI-DSS|GDPR|ISO27001,Collection|Exfiltration,No
+BL-DB-004,Database,Monitor database authentication failures,Database Audit Logs|Error Logs,High,PCI-DSS|ISO27001,Credential Access,No
+BL-DB-005,Database,Monitor bulk data extraction and export operations,Database Audit Logs|Query Logs,High,GDPR|PCI-DSS|ISO27001,Exfiltration|Collection,No
+BL-EMAIL-001,Email,Monitor email gateway for phishing and malicious attachments,Email Gateway Logs|Mail Security Logs,Critical,ISO27001|SOC2,Initial Access,No
+BL-EMAIL-002,Email,Monitor mailbox rule creation and forwarding rules,Exchange Logs|Office 365 Audit Logs,High,ISO27001|SOC2,Collection|Exfiltration,No
+BL-EMAIL-003,Email,Monitor mass email sending and distribution list abuse,Mail Server Logs|SMTP Logs,Medium,ISO27001,Initial Access|Impact,No
+BL-SEC-001,Security Tools,Monitor security tool tampering and disablement,EDR Logs|SIEM Logs|Windows Security Event ID 1102,Critical,ISO27001|NIST,Defense Evasion,No
+BL-SEC-002,Security Tools,Monitor backup system access and backup deletions,Backup Software Logs|Windows Event Logs,Critical,PCI-DSS|ISO27001|SOC2,Impact,No
+BL-SEC-003,Security Tools,Monitor certificate creation and installation,Windows Security|Certificate Authority Logs|Sysmon Event ID 8,High,ISO27001|PCI-DSS,Defense Evasion|Credential Access,No

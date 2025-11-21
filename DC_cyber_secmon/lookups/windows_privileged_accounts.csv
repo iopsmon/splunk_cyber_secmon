@@ -1,0 +1,5 @@
+account,account_type,description
+NT AUTHORITY\SYSTEM,service,Local System Account
+NT AUTHORITY\NETWORK SERVICE,service,Network Service Account
+NT AUTHORITY\LOCAL SERVICE,service,Local Service Account
+Window Manager\DWM-1,service,Desktop Window Manager
