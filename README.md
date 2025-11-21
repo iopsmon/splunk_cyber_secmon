@@ -52,6 +52,13 @@ This project is documented across several markdown files, each covering a specif
 
 [Hosts Reporting](DC_cyber_secmon/iops_hosts_reporting.md)
 
+
+*   **Security Monitoring Baseline**
+    *   An overview of the dashboard used to help define a standard baseline set of monitoring requirements from the business post risk assessment - treatment and threat modelling.
+
+[Security Baseline](DC_cyber_secmon/iops_secbaseline.md)
+
+
 ### Configuration
 
 *   **Asset Configuration Guide**
