@@ -17,6 +17,9 @@
       <choice value="iops_kali_tools">Kali Tools</choice>
       <choice value="iops_uc_factory">Use Case Factory</choice>
       <choice value="iops_soc_assessment">Soc Maturity Assessment</choice>
+      <choice value="iops_st_inv">Source Types Inventory</choice>
+      <choice value="iops_win_priv_acccounts">Windows Priv Accounts</choice>
+      <choice value="iops_sec_mon_baseline">Security Mon Baseline</choice>
       <default>iops_security_alerts_summary</default>
     </input>
   </fieldset>

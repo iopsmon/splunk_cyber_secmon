@@ -31,6 +31,7 @@ This application serves as a **detection engineering platform** that:
 | 1.4.0 | Nov 2025 | Documentation Updates, Incidents Dashboards, Nav Layout, New Lookups | Security Team |
 | 1.5.0 | Nov 2025 | Documentation Updates, use Case Factory Dashboard, Nav Layout, New Lookups, New UC's | Security Team |
 | 1.6.0 | Nov 2025 | Documentation Updates, Soc Assessment Dashboard, New Lookups, New UC's | Security Team |
+| 1.7.0 | Nov 2025 | Documentation Updates, Security Baseline Dashboard, New Lookups, New UC's | Security Team |
 
 
 ---
@@ -576,6 +577,13 @@ This is a custom application developed for internal use. For questions, suggesti
 - New Lookups   
 
 
+### v1.7.0 
+- Security Baseline  Dashboard 
+- Documentation Updates
+- New Use Cases
+- New Lookups  
+
+
 ---
 
 ## License
@@ -584,7 +592,7 @@ This application is for internal use only. Attack data sourced from the Splunk A
 
 ---
 
-**Document Version:** 1.3
+**Document Version:** 1.4
 **Last Updated:** November 2025  
 **Author:** Security Engineering Team
 

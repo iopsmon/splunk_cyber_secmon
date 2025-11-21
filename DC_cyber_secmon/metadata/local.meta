@@ -22,7 +22,7 @@ modtime = 1762182603.892208000
 export = system
 owner = nobody
 version = 9.3.4
-modtime = 1763135937.528240000
+modtime = 1763723447.674804000
 
 [savedsearches/IAM_ALT-001]
 access = read : [ * ], write : [ admin ]
@@ -89,7 +89,7 @@ modtime = 1762876890.394230000
 
 [lookups/uc_factory.csv]
 version = 9.3.4
-modtime = 1763114052.638536000
+modtime = 1763720092.409470000
 
 [lookups/soc_maturity_assessment.csv]
 version = 9.3.4
@@ -113,3 +113,10 @@ modtime = 1763113567.512139000
 [views/sourcetypes_analysis]
 version = 9.3.4
 modtime = 1763485417.590426000
+
+[savedsearches/END_ALT-004]
+access = read : [ * ], write : [ admin, sc_admin ]
+export = system
+owner = nobody
+version = 9.3.4
+modtime = 1763721187.772574000

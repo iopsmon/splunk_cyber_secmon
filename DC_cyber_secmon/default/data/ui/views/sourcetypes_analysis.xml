@@ -1,51 +1,41 @@
-<form script="st_lookup_gen.js" theme="dark" version="1.1">
+<dashboard script="st_lookup_gen.js" theme="dark" version="1.1">
   <label>Sourcetypes Analysis</label>
   <description>Monitor and analyze data source health</description>
-  
-<fieldset submitButton="false">
-  <html>
+  <!-- Status Message Panel -->
+  <!-- Show State Message Panel -->
+  <!-- All Sourcetypes Stats -->
+  <!-- Critical Sources (No Data in 30 mins) -->
+  <fieldset submitButton="false">
+    <html>
     <!-- First Button -->
     <button id="refresh-lookup-btn" class="btn btn-primary" style="margin: 10px;">
-      <i class="icon-rotate-counter"></i> Refresh Datasource Inventory - Use This For Current Inventory
+      <i class="icon-rotate-counter"/> Refresh Datasource Inventory - Use This For Current Inventory
     </button>
     
     <!-- Second Button -->
     <button id="refresh-sourcetype-btn" class="btn btn-primary" style="margin: 10px;">
-      <i class="icon-rotate-counter"></i> Refresh Sourcetype State Run Once Only To Create State Lookup
+      <i class="icon-rotate-counter"/> Refresh Sourcetype State Run Once Only To Create State Lookup
     </button>
   </html>
-</fieldset>
-
-
-  <!-- Status Message Panel -->
+  </fieldset>
   <row>
     <panel>
       <html>
         <div id="status-message" style="padding: 10px; margin: 10px; border-radius: 5px; display: none;">
-          <span id="status-text"></span>
+          <span id="status-text"/>
         </div>
       </html>
     </panel>
   </row>
-
-
-
- <!-- Show State Message Panel -->
   <row>
     <panel>
       <html>
         <div id="sourcetype-status-message" style="padding: 10px; margin: 10px; border-radius: 5px; display: none;">
-          <span id="sourcetype-status-text"></span>
+          <span id="sourcetype-status-text"/>
         </div>
       </html>
     </panel>
   </row>
-
-
-
-
-
-  <!-- All Sourcetypes Stats -->
   <row>
     <panel>
       <title>All Sourcetypes Inventory</title>
@@ -63,25 +53,27 @@
       </table>
     </panel>
   </row>
-  
-  <!-- Critical Sources (No Data in 30 mins) -->
   <row>
     <panel>
-      <title>Critical: No Data in Last 30 Minutes  NEED TO FIX</title>
+      <title>Critical: No Data in Last 60 Minutes</title>
       <table>
         <search>
-          <query>
-| inputlookup iops_st_inv
-
-          </query>
+          <query>| tstats count WHERE index=* earliest=-60m latest=now BY sourcetype
+| eval state="exists"
+| append
+    [| inputlookup iops_st_state
+    | eval state="missing"]
+| dedup sourcetype
+| search state="missing"</query>
           <earliest>-24h@h</earliest>
           <latest>now</latest>
         </search>
         <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
         <format type="color" field="age_minutes">
           <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#F1813F"></colorPalette>
         </format>
       </table>
     </panel>
   </row>
-</form>
+</dashboard>

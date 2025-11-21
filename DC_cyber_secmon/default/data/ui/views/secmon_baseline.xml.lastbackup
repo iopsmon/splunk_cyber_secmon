@@ -1,0 +1,329 @@
+<form version="1.1">
+  <label>Security Monitoring Baseline Coverage</label>
+  <description>Track security monitoring requirements and detection coverage across your environment</description>
+  
+  <fieldset submitButton="false">
+    <input type="dropdown" token="category_filter">
+      <label>Filter by Category</label>
+      <choice value="*">All Categories</choice>
+      <choice value="Endpoint">Endpoint</choice>
+      <choice value="IAM">IAM</choice>
+      <choice value="Network">Network</choice>
+      <choice value="Application">Application</choice>
+      <choice value="Cloud">Cloud</choice>
+      <choice value="Database">Database</choice>
+      <choice value="Email">Email</choice>
+      <choice value="Security Tools">Security Tools</choice>
+      <default>*</default>
+    </input>
+    
+    <input type="dropdown" token="priority_filter">
+      <label>Filter by Priority</label>
+      <choice value="*">All Priorities</choice>
+      <choice value="Critical">Critical</choice>
+      <choice value="High">High</choice>
+      <choice value="Medium">Medium</choice>
+      <choice value="Low">Low</choice>
+      <default>*</default>
+    </input>
+    
+    <input type="dropdown" token="coverage_filter">
+      <label>Filter by Coverage</label>
+      <choice value="*">All</choice>
+      <choice value="Yes">Covered</choice>
+      <choice value="No">Not Covered</choice>
+      <choice value="Partial">Partially Covered</choice>
+      <default>*</default>
+    </input>
+  </fieldset>
+  
+  <!-- Header Statistics Row -->
+  <row>
+    <panel>
+      <title>Total Requirements</title>
+      <single>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| stats count
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x65A637","0x6DB7C6"]</option>
+        <option name="underLabel">Monitoring Requirements</option>
+      </single>
+    </panel>
+    
+    <panel>
+      <title>Overall Coverage</title>
+      <single>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| stats count as total, count(eval(covered="Yes")) as covered_count
+| eval coverage_pct=round((covered_count/total)*100,1)
+| fields coverage_pct
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.0</option>
+        <option name="unit">%</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0xD93F3C","0xF7BC38","0x65A637"]</option>
+        <option name="rangeValues">[30,70]</option>
+        <option name="underLabel">Detection Coverage</option>
+      </single>
+    </panel>
+    
+    <panel>
+      <title>Critical Gaps</title>
+      <single>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| search priority="Critical" covered="No"
+| stats count
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
+        <option name="rangeValues">[1,5]</option>
+        <option name="underLabel">Uncovered Critical Items</option>
+      </single>
+    </panel>
+    
+    <panel>
+      <title>High Priority Gaps</title>
+      <single>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| search priority="High" covered="No"
+| stats count
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xD93F3C"]</option>
+        <option name="rangeValues">[5,15]</option>
+        <option name="underLabel">Uncovered High Priority Items</option>
+      </single>
+    </panel>
+  </row>
+  
+  <!-- Coverage by Category and Priority Row -->
+  <row>
+    <panel>
+      <title>Coverage by Category</title>
+      <chart>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| stats count as total, count(eval(covered="Yes")) as covered, count(eval(covered="No")) as not_covered, count(eval(covered="Partial")) as partial by category
+| eval coverage_pct=round((covered/total)*100,1)
+| sort -coverage_pct
+| fields category, covered, partial, not_covered, coverage_pct
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Category</option>
+        <option name="charting.axisTitleY.text">Count</option>
+        <option name="charting.fieldColors">{"covered": 0x65A637, "partial": 0xF7BC38, "not_covered": 0xD93F3C}</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    
+    <panel>
+      <title>Coverage by Priority Level</title>
+      <chart>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| eval priority_order=case(priority="Critical",1, priority="High",2, priority="Medium",3, priority="Low",4)
+| stats count as total, count(eval(covered="Yes")) as covered, count(eval(covered="No")) as not_covered, count(eval(covered="Partial")) as partial by priority, priority_order
+| eval coverage_pct=round((covered/total)*100,1)
+| sort priority_order
+| fields priority, covered, partial, not_covered, coverage_pct
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Priority</option>
+        <option name="charting.axisTitleY.text">Count</option>
+        <option name="charting.fieldColors">{"covered": 0x65A637, "partial": 0xF7BC38, "not_covered": 0xD93F3C}</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  
+  <!-- Coverage Percentage by Category Row -->
+  <row>
+    <panel>
+      <title>Coverage Percentage by Category</title>
+      <chart>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| stats count as total, count(eval(covered="Yes")) as covered by category
+| eval coverage_pct=round((covered/total)*100,1)
+| sort -coverage_pct
+| fields category, coverage_pct
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.axisTitleX.text">Coverage %</option>
+        <option name="charting.axisTitleY.text">Category</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.fieldColors">{"coverage_pct": 0x6DB7C6}</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  
+  <!-- MITRE Tactics Coverage Row -->
+  <row>
+    <panel>
+      <title>MITRE ATT&amp;CK Tactics Coverage</title>
+      <chart>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| eval mitre_tactics=split(mitre_tactics,"|")
+| mvexpand mitre_tactics
+| stats count as total, count(eval(covered="Yes")) as covered, count(eval(covered="No")) as not_covered by mitre_tactics
+| eval coverage_pct=round((covered/total)*100,1)
+| sort -total
+| fields mitre_tactics, covered, not_covered, coverage_pct
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">MITRE Tactic</option>
+        <option name="charting.axisTitleY.text">Count</option>
+        <option name="charting.fieldColors">{"covered": 0x65A637, "not_covered": 0xD93F3C}</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  
+  <!-- Compliance Framework Coverage Row -->
+  <row>
+    <panel>
+      <title>Compliance Framework Coverage Analysis</title>
+      <table>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| eval compliance_frameworks=split(compliance_frameworks,"|")
+| mvexpand compliance_frameworks
+| stats count as total, count(eval(covered="Yes")) as covered, count(eval(covered="No")) as not_covered, count(eval(covered="Partial")) as partial by compliance_frameworks
+| eval coverage_pct=round((covered/total)*100,1)
+| sort -total
+| rename compliance_frameworks as "Framework", total as "Total Requirements", covered as "Covered", partial as "Partial", not_covered as "Not Covered", coverage_pct as "Coverage %"
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">false</option>
+        <format type="color" field="Coverage %">
+          <colorPalette type="minMidMax" maxColor="#65A637" midColor="#F7BC38" minColor="#D93F3C"></colorPalette>
+          <scale type="minMidMax" midType="number" midValue="50"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  
+  <!-- Critical and High Priority Gaps Table -->
+  <row>
+    <panel>
+      <title>Critical And High Priority Gaps (Not Covered)</title>
+      <table>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| search (priority="Critical" OR priority="High") covered="No"
+| eval priority_order=case(priority="Critical",1, priority="High",2)
+| sort priority_order, category
+| table baseline_id, category, monitoring_requirement, data_sources_needed, priority, compliance_frameworks, mitre_tactics
+| rename baseline_id as "ID", category as "Category", monitoring_requirement as "Monitoring Requirement", data_sources_needed as "Data Sources Needed", priority as "Priority", compliance_frameworks as "Compliance", mitre_tactics as "MITRE Tactics"
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <format type="color" field="Priority">
+          <colorPalette type="map">{"Critical": #D93F3C, "High": #F7BC38}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  
+  <!-- All Requirements Detailed Table -->
+  <row>
+    <panel>
+      <title>All Monitoring Requirements - Detailed View</title>
+      <table>
+        <search>
+          <query>
+| inputlookup iops_sec_mon_baseline
+| search category=$category_filter$ priority=$priority_filter$ covered=$coverage_filter$
+| eval priority_order=case(priority="Critical",1, priority="High",2, priority="Medium",3, priority="Low",4)
+| sort priority_order, category, baseline_id
+| table baseline_id, category, monitoring_requirement, data_sources_needed, priority, covered, compliance_frameworks, mitre_tactics
+| rename baseline_id as "ID", category as "Category", monitoring_requirement as "Monitoring Requirement", data_sources_needed as "Data Sources", priority as "Priority", covered as "Covered", compliance_frameworks as "Compliance", mitre_tactics as "MITRE Tactics"
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <option name="count">20</option>
+        <format type="color" field="Priority">
+          <colorPalette type="map">{"Critical": #D93F3C, "High": #F7BC38, "Medium": #F8BE34, "Low": #6DB7C6}</colorPalette>
+        </format>
+        <format type="color" field="Covered">
+          <colorPalette type="map">{"Yes": #65A637, "No": #D93F3C, "Partial": #F7BC38}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  
+</form>

@@ -26,6 +26,12 @@
  <view name="sourcetypes_analysis"/>
 </collection>
 
+<collection label="Standards">
+ <view name="secmon_baseline"/>
+</collection>
+
+
+
 <collection label="Search">
         <view name="dashboards"/>
         <view name="reports"/>
